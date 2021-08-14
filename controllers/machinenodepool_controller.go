@@ -90,10 +90,13 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 }
 
 func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, req ctrl.Request, pool *imperatorv1alpha1.MachineNodePool) error {
+	if err := r.reconcileStatefulSet(ctx, req, pool); err != nil{
+		return err
+	}
 	return nil
 }
 
-func (r *MachineNodePoolReconciler) reconcileStatefulSet(ctx context.Context, req ctrl.Request, pool *imperatorv1alpha1.MachineNodePoolSpec) error {
+func (r *MachineNodePoolReconciler) reconcileStatefulSet(ctx context.Context, req ctrl.Request, pool *imperatorv1alpha1.MachineNodePool) error {
 	return nil
 }
 
