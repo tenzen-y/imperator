@@ -1,4 +1,4 @@
-name: unit tests
+name: builds
 on:
   push:
     tags:
@@ -10,7 +10,7 @@ on:
       - master
 
 jobs:
-  test:
+  build-test:
     runs-on: ubuntu-20.04
     steps:
       - name: setup go
@@ -21,6 +21,15 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - name: test
+      - name: build test
         run: |
-          make test
+          make build
+  docker-build-test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: docker build test
+        run: make docker-build
