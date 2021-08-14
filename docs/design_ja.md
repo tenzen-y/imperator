@@ -118,6 +118,7 @@ metadata:
   labels:
     imperator.io/machine-group: general-machine
 spec:
+  machineGroup: general-machine
   nodePool:
     - name: michiru
       mode: ready

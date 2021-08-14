@@ -1,3 +1,3 @@
 # imperator
 
-Provide virtual resource group to statefull applications.
+Provide virtual resource group to stateful applications.
