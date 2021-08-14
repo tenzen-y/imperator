@@ -1,0 +1,7 @@
+apiVersion: imperator.imprator.io/v1alpha1
+kind: MachineNodePool
+metadata:
+  name: machinenodepool-sample
+spec:
+  # Add fields here
+  foo: bar

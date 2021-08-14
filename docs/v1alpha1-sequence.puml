@@ -1,0 +1,41 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+participant "End User" as User order 1
+participant "K8s API\n Server" as APIServer order 2
+participant "Imperator Machine\n webhook" as MachineWebhook order 3
+participant "Imperator StatefullSet\n webhook" as STWebhook order 4
+participant "Imperator Job\n webhook" as Webhook order 5
+participant "Imperator Machine\n controller" as MachineController order 6
+participant "Imperator MachineNodePool\n controller" as MachineNodePoolController order 8
+
+User -> APIServer: Create Machine CR
+activate User
+activate APIServer
+
+APIServer --> MachineWebhook: New CR
+activate MachineWebhook
+
+MachineWebhook --> APIServer: webhook result
+deactivate MachineWebhook
+
+APIServer -> User: result
+deactivate User
+
+APIServer --> MachineController: New Machine CR
+activate MachineController
+
+MachineController --> APIServer: Create MachineNodePool CR
+deactivate MachineController
+
+APIServer --> MachineNodePoolController: New MachineNodePool CR
+activate MachineNodePoolController
+
+MachineNodePoolController --> APIServer: set `imperator.io/node=MACHINE_CR_NAME` to node
+deactivate MachineNodePoolController
+
+
+
+deactivate APIServer
+
+@enduml
