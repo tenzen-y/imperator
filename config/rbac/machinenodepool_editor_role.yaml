@@ -1,0 +1,24 @@
+# permissions for end users to edit machinenodepools.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: machinenodepool-editor-role
+rules:
+- apiGroups:
+  - imperator.imprator.io
+  resources:
+  - machinenodepools
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - imperator.imprator.io
+  resources:
+  - machinenodepools/status
+  verbs:
+  - get
