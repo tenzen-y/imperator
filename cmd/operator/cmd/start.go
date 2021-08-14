@@ -51,6 +51,7 @@ func (o *options) run() error {
 	if err = (&controllers.MachineReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("imperator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine")
 		return err
@@ -62,6 +63,7 @@ func (o *options) run() error {
 	if err = (&controllers.MachineNodePoolReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("imperator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MachineNodePool")
 		return err

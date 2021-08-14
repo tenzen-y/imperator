@@ -1,30 +1,74 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // MachineNodePoolSpec defines the desired state of MachineNodePool
 type MachineNodePoolSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of MachineNodePool. Edit machinenodepool_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// MachineGroupName is node pool group
+	//+kubebuilder:validation:Required
+	MachineGroupName string `json:"machineGroupName"`
+
+	// NodePool is node list that machineGroup is managing.
+	// +kubebuilder:validation:Required
+	NodePool []NodePool `json:"nodePool"`
+}
+
+type NodePool struct {
+
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=ready;maintenance
+	Mode string `json:"mode"`
 }
 
 // MachineNodePoolStatus defines the observed state of MachineNodePool
 type MachineNodePoolStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+
+	// +optional
+	Conditions []MachineNodePoolCondition `json:"condition,omitempty"`
+
+	// +optional
+	NodePoolCondition []NodePoolCondition `json:"nodePool"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster
+type NodePoolCondition struct {
+
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Enum=Healthy;Maintenance;Unhealthy
+	NodeCondition string `json:"condition"`
+}
+
+// MachineNodePoolCondition defines condition of MachineNodePool
+type MachineNodePoolCondition struct {
+	Type MachineNodePoolConditionType `json:"type"`
+
+	Status corev1.ConditionStatus `json:"status"`
+
+	Reason string `json:"reason,omitempty"`
+
+	LastTransitionTime metav1.Time `json:"LastTransitionTime"`
+}
+
+// MachineNodePoolConditionType is the type for MachineNodePool condition
+// +kubebuilder:validation:Enum=Ready
+type MachineNodePoolConditionType string
+
+const (
+	ConditionReady MachineNodePoolConditionType = "Ready"
+)
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="Group",type="string",JSONPath=".spec.machineGroup"
 
 // MachineNodePool is the Schema for the machinenodepools API
 type MachineNodePool struct {

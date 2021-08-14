@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"k8s.io/client-go/tools/record"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -15,6 +16,7 @@ import (
 type MachineReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=imperator.imprator.io,resources=machines,verbs=get;list;watch;create;update;patch;delete

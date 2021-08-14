@@ -11,7 +11,7 @@ Imperator is Kubernetes Operator Pattern. This operator has two controller in th
 1. Machine Controller
 
 2. MachineNodePool controller
-   - This controller manage Kubernetes node to use target statefull applications.
+   - This controller manage Kubernetes node to use target stateful applications.
    - This controller set virtual resource group name as node label to Kubernetes nodes defined into `nodePool` in CustomResource(CR).
    - if `nodePool.mode` is defined `maintenance` in CR, this controller is set maintenance=true as node label to Kubernetes nodes and
      maintenance to  in machine CR status.
