@@ -100,7 +100,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build: generate fmt vet ## Build imperator binary.
-	go build -ldflags "-X github.com/tenzen-y/imperator/version.Version=${VERSION}" -o bin/imperator cmd/operator/main.go
+	go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -o bin/imperator cmd/operator/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

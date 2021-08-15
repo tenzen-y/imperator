@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/tenzen-y/imperator"
+	"github.com/tenzen-y/imperator/pkg/version"
 )
 
 type options struct {
@@ -15,7 +15,7 @@ func NewRootCmd() (*cobra.Command, error) {
 	o := &options{}
 	rootCmd := &cobra.Command{
 		Use:     "imperator",
-		Version: imperator.Version,
+		Version: version.Version,
 		Short:   "imperator",
 		Long:    `imperator`,
 		RunE: func(cmd *cobra.Command, args []string) error {

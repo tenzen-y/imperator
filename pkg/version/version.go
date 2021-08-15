@@ -1,3 +1,3 @@
-package imperator
+package version
 
 var Version = "dev"
