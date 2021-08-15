@@ -1,4 +1,4 @@
-domain: imprator.io
+domain: tenzen-y.io
 layout:
 - go.kubebuilder.io/v3
 plugins:
@@ -10,7 +10,7 @@ resources:
 - api:
     crdVersion: v1
   controller: true
-  domain: imprator.io
+  domain: tenzen-y.io
   group: imperator
   kind: Machine
   path: github.com/tenzen-y/imperator/api/v1alpha1
@@ -22,7 +22,7 @@ resources:
 - api:
     crdVersion: v1
   controller: true
-  domain: imprator.io
+  domain: tenzen-y.io
   group: imperator
   kind: MachineNodePool
   path: github.com/tenzen-y/imperator/api/v1alpha1

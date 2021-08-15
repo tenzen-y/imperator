@@ -18,7 +18,7 @@ webhooks:
   name: mmachine.kb.io
   rules:
   - apiGroups:
-    - imperator.imprator.io
+    - imperator.tenzen-y.io
     apiVersions:
     - v1alpha1
     operations:
@@ -47,7 +47,7 @@ webhooks:
   name: vmachine.kb.io
   rules:
   - apiGroups:
-    - imperator.imprator.io
+    - imperator.tenzen-y.io
     apiVersions:
     - v1alpha1
     operations:

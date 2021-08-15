@@ -1,4 +1,4 @@
-apiVersion: imperator.imprator.io/v1alpha1
+apiVersion: imperator.tenzen-y.io/v1alpha1
 kind: MachineNodePool
 metadata:
   name: machinenodepool-sample

@@ -28,7 +28,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# imprator.io/imperator-bundle:$VERSION and imprator.io/imperator-catalog:$VERSION.
+# tenzen-y.io/imperator-bundle:$VERSION and tenzen-y.io/imperator-catalog:$VERSION.
 IMAGE_TAG_BASE ?= ghcr.io/tenzen-y/imperator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
@@ -100,7 +100,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build: generate fmt vet ## Build imperator binary.
-	go build -ldflags "-X github.com/tenzen-y/imperator/cmd/operator/cmd/version.version=${VERSION}" -o bin/imperator cmd/operator/main.go
+	go build -ldflags "-X github.com/tenzen-y/imperator/version.Version=${VERSION}" -o bin/imperator cmd/operator/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

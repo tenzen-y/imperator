@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.6.1
   creationTimestamp: null
-  name: machines.imperator.imprator.io
+  name: machines.imperator.tenzen-y.io
 spec:
-  group: imperator.imprator.io
+  group: imperator.tenzen-y.io
   names:
     kind: Machine
     listKind: MachineList

@@ -1,5 +1,5 @@
 # imperator v1alpha
-design doceumtn for imperator v1beta1.
+design doceumtn for imperator v1alpha1.
 
 ## Goal
 Provide virtual resource group to applications.
@@ -30,7 +30,7 @@ machine の数量管理では，Pod リソースを監視する．
 
 ### NodePool controller
 - nodePool の mode が ready のノードに `imperator/nodePool=ready` のラベルをつける．
-  nodePool に無いノードもしくは， mode が ready ではなくなったノードや status が healthy では無くなったノードからはラベルを削除する．
+  nodePool に無いノードもしくは， mode が `ready` ではなくなったノードや status が `not-ready` では無くなったノードからはラベルを削除する．
 - status の nodePool 欄 condition は，定期的に node を監視し，健康状態に応じて変更する．
 
 ## Custom Resource Schema
@@ -42,7 +42,7 @@ machine の数量管理では，Pod リソースを監視する．
 
 ```yaml
 ---
-apiVersion: imperator.io/v1beta1
+apiVersion: imperator.io/v1alpha1
 kind: Machine
 metadata:
   name: general-machine
@@ -111,7 +111,7 @@ status:
 
 ```yaml
 ---
-apiVersion: imperator.io/v1beta1
+apiVersion: imperator.io/v1alpha1
 kind: MachineNodePool
 metadata:
   name: general-machine-node-pool
@@ -133,9 +133,9 @@ status:
       type: Ready
   nodePool:
     - name: michiru
-      condition: healthy
+      condition: Ready
     - name: utaha
-      condition: maintenance
+      condition: Maintenance
     - name: eriri
-      condition: unhealthy
+      condition: NotReady
 ```

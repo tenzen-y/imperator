@@ -3,37 +3,42 @@ package controllers
 import (
 	"context"
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/api/v1alpha1"
+	"github.com/tenzen-y/imperator/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	corev1apply "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
-
-func findMachineNodePoolCondition(conditions []imperatorv1alpha1.MachineNodePoolCondition, conditionType imperatorv1alpha1.MachineNodePoolConditionType) *imperatorv1alpha1.MachineNodePoolCondition{
-	for _, c := range conditions {
-		if c.Type == conditionType {
-			return &c
-		}
-	}
-	return nil
-}
 
 // MachineNodePoolReconciler reconciles a MachineNodePool object
 type MachineNodePoolReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=imperator.imprator.io,resources=machinenodepools,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=imperator.imprator.io,resources=machinenodepools/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=imperator.imprator.io,resources=machinenodepools/finalizers,verbs=update
+//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=core,resources=nodes/status,verbs=get;list;watch
 
+// Reconcile is main function for reconciliation loop
 func (r *MachineNodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
@@ -53,30 +58,17 @@ func (r *MachineNodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	err = r.reconcile(ctx, req, pool)
-	if err != nil {
-		logger.Error(err, "unable to reconcile", "name", req.NamespacedName)
-		r.Recorder.Eventf(pool, corev1.EventTypeWarning, "Failed", "failed to reconcile: %s", err.Error())
-
-		newCondition :=	&imperatorv1alpha1.MachineNodePoolCondition{
-			Type: imperatorv1alpha1.ConditionReady,
-			Status: corev1.ConditionFalse,
-			Reason: err.Error(),
-		}
-
-		current := findMachineNodePoolCondition(pool.Status.Conditions, newCondition.Type)
-		if current == nil {
-			newCondition.LastTransitionTime = metav1.Now()
-			pool.Status.Conditions = append(pool.Status.Conditions, *newCondition)
-			return ctrl.Result{}, err
-		}
-		if current.Status != newCondition.Status {
-			current.Status = newCondition.Status
-			current.LastTransitionTime = metav1.Now()
-		}
-		current.Reason = newCondition.Reason
-		if err = r.Status().Update(ctx, pool); err != nil {
-		logger.Error(err, "failed to update status.condition", "name", req.NamespacedName)
+	if err = r.reconcile(ctx, pool); err != nil {
+		logger.Error(err, "unable to reconcile", "name", pool.Name)
+		r.Recorder.Eventf(pool, corev1.EventTypeWarning, "Failed", "MachineNodePool, %s: failed to reconcile: %s", pool.Name, err.Error())
+		meta.SetStatusCondition(&pool.Status.Conditions, metav1.Condition{
+			Type:    imperatorv1alpha1.ConditionReady,
+			Status:  metav1.ConditionFalse,
+			Reason:  metav1.StatusFailure,
+			Message: err.Error(),
+		})
+		if updateErr := r.Status().Update(ctx, pool); err != nil {
+			logger.Error(updateErr, "failed to update MachineNodePool status", "name", pool.Name)
 		}
 		return ctrl.Result{}, err
 	}
@@ -84,26 +76,181 @@ func (r *MachineNodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return r.updateStatus(ctx, pool)
 }
 
-func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) (ctrl.Result, error){
+func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
+	nodes := &corev1.NodeList{}
+	if err := r.List(ctx, nodes, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{consts.MachineGroupKey: pool.Spec.MachineGroupName}),
+	}); err != nil && errors.IsNotFound(err) {
+		logger.Error(err, "unable to list node managed by imperator", "name", pool.Name)
+		return ctrl.Result{}, err
+	}
+
+	nodeLabelCondition := map[string]string{}
+	for _, n := range nodes.Items {
+		nodeLabelCondition[n.Name] = n.GetObjectMeta().GetLabels()[consts.MachineStatusKey]
+	}
+
+	var nodeConditions []imperatorv1alpha1.NodePoolCondition
+	for _, p := range pool.Spec.NodePool {
+		var nc imperatorv1alpha1.MachineNodeCondition
+		switch nodeLabelCondition[p.Name] {
+		case consts.MachineStatusReady:
+			nc = imperatorv1alpha1.NodeReady
+		case consts.MachineStatusNotReady:
+			nc = imperatorv1alpha1.NodeNotReady
+		default:
+			if p.Mode == "maintenance" {
+				nc = imperatorv1alpha1.NodeMaintenance
+			}
+		}
+
+		nodeConditions = append(nodeConditions, imperatorv1alpha1.NodePoolCondition{
+			Name:          p.Name,
+			NodeCondition: nc,
+		})
+	}
+
+	newStatus := &imperatorv1alpha1.MachineNodePoolStatus{}
+	if !reflect.DeepEqual(pool.Status.NodePoolCondition, nodeConditions) {
+		newStatus.NodePoolCondition = nodeConditions
+	} else {
+		newStatus.NodePoolCondition = pool.Status.NodePoolCondition
+	}
+
+	condition := meta.FindStatusCondition(pool.Status.Conditions, imperatorv1alpha1.ConditionReady)
+	if meta.IsStatusConditionTrue(pool.Status.Conditions, imperatorv1alpha1.ConditionReady) {
+		newStatus.Conditions[0] = *condition
+	} else {
+		newStatus.Conditions[0] = metav1.Condition{
+			Type:   imperatorv1alpha1.ConditionReady,
+			Status: metav1.ConditionTrue,
+			Reason: metav1.StatusSuccess,
+		}
+	}
+
+	if reflect.DeepEqual(pool.Status, newStatus) {
+		r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "MachineNodePool, %s: updated condition", pool.Name)
+		if err := r.Status().Update(ctx, pool); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, req ctrl.Request, pool *imperatorv1alpha1.MachineNodePool) error {
-	if err := r.reconcileStatefulSet(ctx, req, pool); err != nil{
+func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) error {
+	if err := r.reconcileNode(ctx, pool); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *MachineNodePoolReconciler) reconcileStatefulSet(ctx context.Context, req ctrl.Request, pool *imperatorv1alpha1.MachineNodePool) error {
+func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) error {
+	logger := log.FromContext(ctx)
+
+	for _, p := range pool.Spec.NodePool {
+
+		currentNode := &corev1.Node{}
+		if err := r.Get(ctx, client.ObjectKey{Name: p.Name}, currentNode); err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+
+		nodeLabels := map[string]string{
+			consts.MachineGroupKey:  pool.Spec.MachineGroupName,
+			consts.MachineStatusKey: consts.MachineStatusReady,
+		}
+		for _, c := range currentNode.Status.Conditions {
+			switch c.Type {
+			case corev1.NodeReady:
+				if c.Status == corev1.ConditionFalse {
+					nodeLabels[consts.MachineStatusKey] = consts.MachineStatusNotReady
+				}
+			case corev1.NodeNetworkUnavailable:
+				if c.Status == corev1.ConditionTrue {
+					nodeLabels[consts.MachineStatusKey] = consts.MachineStatusNotReady
+				}
+			default:
+				continue
+			}
+		}
+
+		nodePatch := corev1apply.Node(p.Name).WithLabels(nodeLabels)
+		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(nodePatch)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+		patch := &unstructured.Unstructured{
+			Object: obj,
+		}
+
+		currentApplyConfig, err := corev1apply.ExtractNode(currentNode, consts.ControllerName)
+		if err != nil {
+			return err
+		}
+
+		if equality.Semantic.DeepEqual(nodePatch, currentApplyConfig) {
+			return nil
+		}
+
+		if err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
+			FieldManager: consts.ControllerName,
+			Force:        pointer.Bool(true),
+		}); err != nil {
+			logger.Error(err, "unable to set label to "+p.Name, "name", pool.Name)
+			return err
+		}
+	}
+	logger.Info("reconcile Node successfully", "name", pool.Name)
 	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MachineNodePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	nodeHandler := handler.EnqueueRequestsFromMapFunc(r.nodeReconcileTrigger)
+
+	ctx := context.Background()
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &imperatorv1alpha1.MachineNodePool{}, consts.OwnerControllerField, indexedByOwnerMachineNodePool); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imperatorv1alpha1.MachineNodePool{}).
-		Owns(&appsv1.StatefulSet{}).
+		Watches(&source.Kind{Type: &corev1.Node{}}, nodeHandler).
 		Complete(r)
+}
+
+func (r *MachineNodePoolReconciler) nodeReconcileTrigger(o client.Object) []reconcile.Request {
+	return r.nodeReconcileRequest(o)
+}
+
+func (r *MachineNodePoolReconciler) nodeReconcileRequest(o client.Object) []reconcile.Request {
+	pools := &imperatorv1alpha1.MachineNodePoolList{}
+	if err := r.List(context.Background(), pools, &client.ListOptions{}); err != nil {
+		return nil
+	}
+
+	var req []reconcile.Request
+	for _, p := range pools.Items {
+		if _, ok := p.ObjectMeta.Labels[consts.MachineGroupKey]; !ok {
+			continue
+		}
+		if p.Spec.MachineGroupName == o.GetLabels()[consts.MachineGroupKey] {
+			req = append(req, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(&p)})
+		}
+	}
+	return req
+}
+
+func indexedByOwnerMachineNodePool(o client.Object) []string {
+	statefulSet := o.(*appsv1.StatefulSet)
+	owner := metav1.GetControllerOf(statefulSet)
+	if owner == nil {
+		return nil
+	}
+	if owner.APIVersion != imperatorv1alpha1.GroupVersion.String() || owner.Kind != consts.KindMachineNodePool {
+		return nil
+	}
+	return []string{owner.Name}
 }

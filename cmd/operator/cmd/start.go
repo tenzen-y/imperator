@@ -41,7 +41,7 @@ func (o *options) run() error {
 		Port:                   9443,
 		HealthProbeBindAddress: o.probeAddr,
 		LeaderElection:         o.enableLeaderElection,
-		LeaderElectionID:       "c402a1f6.imprator.io",
+		LeaderElectionID:       "c402a1f6.tenzen-y.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start imperator")
@@ -49,8 +49,8 @@ func (o *options) run() error {
 	}
 
 	if err = (&controllers.MachineReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("imperator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine")
@@ -61,8 +61,8 @@ func (o *options) run() error {
 		return err
 	}
 	if err = (&controllers.MachineNodePoolReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("imperator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MachineNodePool")

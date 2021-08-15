@@ -7,7 +7,25 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - imperator.imprator.io
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - imperator.tenzen-y.io
   resources:
   - machinenodepools
   verbs:
@@ -19,13 +37,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - imperator.imprator.io
+  - imperator.tenzen-y.io
   resources:
   - machinenodepools/finalizers
   verbs:
   - update
 - apiGroups:
-  - imperator.imprator.io
+  - imperator.tenzen-y.io
   resources:
   - machinenodepools/status
   verbs:
@@ -33,7 +51,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - imperator.imprator.io
+  - imperator.tenzen-y.io
   resources:
   - machines
   verbs:
@@ -45,13 +63,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - imperator.imprator.io
+  - imperator.tenzen-y.io
   resources:
   - machines/finalizers
   verbs:
   - update
 - apiGroups:
-  - imperator.imprator.io
+  - imperator.tenzen-y.io
   resources:
   - machines/status
   verbs:

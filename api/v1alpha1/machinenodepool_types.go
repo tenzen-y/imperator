@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,37 +30,30 @@ type NodePool struct {
 type MachineNodePoolStatus struct {
 
 	// +optional
-	Conditions []MachineNodePoolCondition `json:"condition,omitempty"`
+	Conditions []metav1.Condition `json:"condition,omitempty"`
 
 	// +optional
 	NodePoolCondition []NodePoolCondition `json:"nodePool"`
 }
 
 type NodePoolCondition struct {
-
 	Name string `json:"name"`
 
-	// +kubebuilder:validation:Enum=Healthy;Maintenance;Unhealthy
-	NodeCondition string `json:"condition"`
+	NodeCondition MachineNodeCondition `json:"condition"`
 }
 
-// MachineNodePoolCondition defines condition of MachineNodePool
-type MachineNodePoolCondition struct {
-	Type MachineNodePoolConditionType `json:"type"`
-
-	Status corev1.ConditionStatus `json:"status"`
-
-	Reason string `json:"reason,omitempty"`
-
-	LastTransitionTime metav1.Time `json:"LastTransitionTime"`
-}
-
-// MachineNodePoolConditionType is the type for MachineNodePool condition
-// +kubebuilder:validation:Enum=Ready
-type MachineNodePoolConditionType string
+// MachineNodeCondition is condition of Kubernetes Nodes
+// +kubebuilder:validation:Enum=Healthy;Maintenance;Unhealthy
+type MachineNodeCondition string
 
 const (
-	ConditionReady MachineNodePoolConditionType = "Ready"
+	NodeReady       MachineNodeCondition = "Ready"
+	NodeMaintenance MachineNodeCondition = "Maintenance"
+	NodeNotReady    MachineNodeCondition = "NotReady"
+)
+
+const (
+	ConditionReady = "Ready"
 )
 
 // +kubebuilder:object:root=true
