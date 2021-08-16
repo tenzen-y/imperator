@@ -33,13 +33,16 @@ type MachineNodePoolStatus struct {
 	Conditions []metav1.Condition `json:"condition,omitempty"`
 
 	// +optional
-	NodePoolCondition []NodePoolCondition `json:"nodePool"`
+	NodePoolCondition []NodePoolCondition `json:"nodePool,omitempty"`
 }
 
 type NodePoolCondition struct {
-	Name string `json:"name"`
 
-	NodeCondition MachineNodeCondition `json:"condition"`
+	// +optional
+	Name string `json:"name,omitempty"`
+
+	// +optional
+	NodeCondition MachineNodeCondition `json:"condition,omitempty"`
 }
 
 // MachineNodeCondition is condition of Kubernetes Nodes
