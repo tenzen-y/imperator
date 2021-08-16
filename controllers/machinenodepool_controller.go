@@ -113,12 +113,8 @@ func (r *MachineNodePoolReconciler) removeNodePoolLabel(ctx context.Context, poo
 		}
 
 		nodeLabel := currentNode.GetLabels()
-		if _, exist := nodeLabel[consts.MachineGroupKey]; exist {
-			delete(nodeLabel, consts.MachineGroupKey)
-		}
-		if _, exist := currentNode.GetLabels()[consts.MachineStatusKey]; exist {
-			delete(nodeLabel, consts.MachineStatusKey)
-		}
+		delete(nodeLabel, consts.MachineGroupKey)
+		delete(nodeLabel, consts.MachineStatusKey)
 
 		nodePatch := corev1apply.Node(p.Name).WithLabels(nodeLabel)
 		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(nodePatch)
