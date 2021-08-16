@@ -151,9 +151,6 @@ spec:
                       type: string
                     name:
                       type: string
-                  required:
-                  - condition
-                  - name
                   type: object
                 type: array
             type: object
