@@ -20,4 +20,5 @@ const (
 const (
 	OwnerControllerField = ".metadata.ownerReference.controller"
 	ControllerName       = "imperator-machinenodepool-controller"
+	MachineNodePoolFinalizer = "imperator-machinenodepool-finalizer"
 )

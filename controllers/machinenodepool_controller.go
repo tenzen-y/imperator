@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,6 +20,7 @@ import (
 	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -54,11 +56,36 @@ func (r *MachineNodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	if !pool.ObjectMeta.DeletionTimestamp.IsZero() {
+	return r.reconcile(ctx, pool)
+}
+
+func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
+	if pool.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !controllerutil.ContainsFinalizer(pool, consts.MachineNodePoolFinalizer) {
+			controllerutil.AddFinalizer(pool, consts.MachineNodePoolFinalizer)
+			if err := r.Update(ctx, pool); err != nil {
+				return ctrl.Result{}, err
+			}
+			r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "%s, %s: add finalizer", consts.KindMachineNodePool, pool.Name)
+			return ctrl.Result{}, nil
+		}
+	} else {
+		if controllerutil.ContainsFinalizer(pool, consts.MachineNodePoolFinalizer) {
+			if err := r.removeNodePoolLabel(ctx, pool); err != nil {
+				return ctrl.Result{}, err
+			}
+			controllerutil.RemoveFinalizer(pool, consts.MachineNodePoolFinalizer)
+			if err := r.Update(ctx, pool); err != nil {
+				return ctrl.Result{}, err
+			}
+			r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "$s, %s: remove finalizer", consts.KindMachineNodePool, pool.Name)
+		}
 		return ctrl.Result{}, nil
 	}
 
-	if err = r.reconcile(ctx, pool); err != nil {
+	if err := r.reconcileNode(ctx, pool); err != nil {
 		logger.Error(err, "unable to reconcile", "name", pool.Name)
 		r.Recorder.Eventf(pool, corev1.EventTypeWarning, "Failed", "MachineNodePool, %s: failed to reconcile: %s", pool.Name, err.Error())
 		meta.SetStatusCondition(&pool.Status.Conditions, metav1.Condition{
@@ -76,73 +103,49 @@ func (r *MachineNodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return r.updateStatus(ctx, pool)
 }
 
-func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) (ctrl.Result, error) {
+func (r *MachineNodePoolReconciler) removeNodePoolLabel(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) error {
 	logger := log.FromContext(ctx)
 
-	nodes := &corev1.NodeList{}
-	if err := r.List(ctx, nodes, &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{consts.MachineGroupKey: pool.Spec.MachineGroupName}),
-	}); err != nil && errors.IsNotFound(err) {
-		logger.Error(err, "unable to list node managed by imperator", "name", pool.Name)
-		return ctrl.Result{}, err
-	}
-
-	nodeLabelCondition := map[string]string{}
-	for _, n := range nodes.Items {
-		nodeLabelCondition[n.Name] = n.GetObjectMeta().GetLabels()[consts.MachineStatusKey]
-	}
-
-	var nodeConditions []imperatorv1alpha1.NodePoolCondition
 	for _, p := range pool.Spec.NodePool {
-		var nc imperatorv1alpha1.MachineNodeCondition
-		switch nodeLabelCondition[p.Name] {
-		case consts.MachineStatusReady:
-			nc = imperatorv1alpha1.NodeReady
-		case consts.MachineStatusNotReady:
-			nc = imperatorv1alpha1.NodeNotReady
-		default:
-			if p.Mode == "maintenance" {
-				nc = imperatorv1alpha1.NodeMaintenance
-			}
+		currentNode := &corev1.Node{}
+		if err := r.Get(ctx, client.ObjectKey{Name: p.Name}, currentNode); err != nil && !errors.IsNotFound(err) {
+			return err
 		}
 
-		nodeConditions = append(nodeConditions, imperatorv1alpha1.NodePoolCondition{
-			Name:          p.Name,
-			NodeCondition: nc,
-		})
-	}
-
-	newStatus := &imperatorv1alpha1.MachineNodePoolStatus{}
-	if !reflect.DeepEqual(pool.Status.NodePoolCondition, nodeConditions) {
-		newStatus.NodePoolCondition = nodeConditions
-	} else {
-		newStatus.NodePoolCondition = pool.Status.NodePoolCondition
-	}
-
-	condition := meta.FindStatusCondition(pool.Status.Conditions, imperatorv1alpha1.ConditionReady)
-	if meta.IsStatusConditionTrue(pool.Status.Conditions, imperatorv1alpha1.ConditionReady) {
-		newStatus.Conditions[0] = *condition
-	} else {
-		newStatus.Conditions[0] = metav1.Condition{
-			Type:   imperatorv1alpha1.ConditionReady,
-			Status: metav1.ConditionTrue,
-			Reason: metav1.StatusSuccess,
+		nodeLabel := currentNode.GetLabels()
+		if _, exist := nodeLabel[consts.MachineGroupKey]; exist {
+			delete(nodeLabel, consts.MachineGroupKey)
 		}
-	}
-
-	if reflect.DeepEqual(pool.Status, newStatus) {
-		r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "MachineNodePool, %s: updated condition", pool.Name)
-		if err := r.Status().Update(ctx, pool); err != nil {
-			return ctrl.Result{}, err
+		if _, exist := currentNode.GetLabels()[consts.MachineStatusKey]; exist {
+			delete(nodeLabel, consts.MachineStatusKey)
 		}
-	}
 
-	return ctrl.Result{}, nil
-}
+		nodePatch := corev1apply.Node(p.Name).WithLabels(nodeLabel)
+		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(nodePatch)
+		if err != nil {
+			return err
+		}
+		patch := &unstructured.Unstructured{
+			Object: obj,
+		}
 
-func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) error {
-	if err := r.reconcileNode(ctx, pool); err != nil {
-		return err
+		currentApplyConfig, err := corev1apply.ExtractNode(currentNode, consts.ControllerName)
+		if err != nil {
+			return err
+		}
+
+		if equality.Semantic.DeepEqual(nodePatch, currentApplyConfig) {
+			return nil
+		}
+
+		if err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
+			FieldManager: consts.ControllerName,
+			Force:        pointer.Bool(true),
+		}); err != nil {
+			logger.Error(err, fmt.Sprintf("unable to remove label from %s", p.Name), "name", pool.Name)
+			return err
+		}
+		r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "%s, %s: remove node, %s's label", consts.KindMachineNodePool, pool.Name, p.Name)
 	}
 	return nil
 }
@@ -201,9 +204,75 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			logger.Error(err, "unable to set label to "+p.Name, "name", pool.Name)
 			return err
 		}
+		r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "%s, %s: update node, %s's label", consts.KindMachineNodePool, pool.Name, p.Name)
 	}
 	logger.Info("reconcile Node successfully", "name", pool.Name)
 	return nil
+}
+
+func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *imperatorv1alpha1.MachineNodePool) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+
+	nodes := &corev1.NodeList{}
+	if err := r.List(ctx, nodes, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{consts.MachineGroupKey: pool.Spec.MachineGroupName}),
+	}); err != nil && errors.IsNotFound(err) {
+		logger.Error(err, "unable to list node managed by imperator", "name", pool.Name)
+		return ctrl.Result{}, err
+	}
+
+	nodeLabelCondition := map[string]string{}
+	for _, n := range nodes.Items {
+		nodeLabelCondition[n.Name] = n.GetLabels()[consts.MachineStatusKey]
+	}
+
+	var nodeConditions []imperatorv1alpha1.NodePoolCondition
+	for _, p := range pool.Spec.NodePool {
+		var nc imperatorv1alpha1.MachineNodeCondition
+		switch nodeLabelCondition[p.Name] {
+		case consts.MachineStatusReady:
+			nc = imperatorv1alpha1.NodeReady
+		case consts.MachineStatusNotReady:
+			nc = imperatorv1alpha1.NodeNotReady
+		default:
+			if p.Mode == "maintenance" {
+				nc = imperatorv1alpha1.NodeMaintenance
+			}
+		}
+
+		nodeConditions = append(nodeConditions, imperatorv1alpha1.NodePoolCondition{
+			Name:          p.Name,
+			NodeCondition: nc,
+		})
+	}
+
+	newStatus := &imperatorv1alpha1.MachineNodePoolStatus{}
+	if reflect.DeepEqual(pool.Status.NodePoolCondition, nodeConditions) {
+		newStatus.NodePoolCondition = pool.Status.NodePoolCondition
+	} else {
+		newStatus.NodePoolCondition = nodeConditions
+	}
+
+	condition := meta.FindStatusCondition(pool.Status.Conditions, imperatorv1alpha1.ConditionReady)
+	if meta.IsStatusConditionTrue(pool.Status.Conditions, imperatorv1alpha1.ConditionReady) {
+		newStatus.Conditions[0] = *condition
+	} else {
+		newStatus.Conditions[0] = metav1.Condition{
+			Type:   imperatorv1alpha1.ConditionReady,
+			Status: metav1.ConditionTrue,
+			Reason: metav1.StatusSuccess,
+		}
+	}
+
+	if !reflect.DeepEqual(pool.Status, newStatus) {
+		pool.Status = *newStatus
+		r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "%s, %s: updated condition", consts.KindMachineNodePool, pool.Name)
+		if err := r.Status().Update(ctx, pool); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
