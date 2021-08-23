@@ -5,7 +5,6 @@ import (
 	"fmt"
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -230,10 +229,9 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 			nc = imperatorv1alpha1.NodeReady
 		case consts.MachineStatusNotReady:
 			nc = imperatorv1alpha1.NodeNotReady
-		default:
-			if p.Mode == "maintenance" {
-				nc = imperatorv1alpha1.NodeMaintenance
-			}
+		}
+		if p.Mode == "maintenance" {
+			nc = imperatorv1alpha1.NodeMaintenance
 		}
 
 		nodeConditions = append(nodeConditions, imperatorv1alpha1.NodePoolCondition{
@@ -275,11 +273,6 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 func (r *MachineNodePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	nodeHandler := handler.EnqueueRequestsFromMapFunc(r.nodeReconcileTrigger)
 
-	ctx := context.Background()
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &imperatorv1alpha1.MachineNodePool{}, consts.OwnerControllerField, indexedByOwnerMachineNodePool); err != nil {
-		return err
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imperatorv1alpha1.MachineNodePool{}).
 		Watches(&source.Kind{Type: &corev1.Node{}}, nodeHandler).
@@ -306,16 +299,4 @@ func (r *MachineNodePoolReconciler) nodeReconcileRequest(o client.Object) []reco
 		}
 	}
 	return req
-}
-
-func indexedByOwnerMachineNodePool(o client.Object) []string {
-	statefulSet := o.(*appsv1.StatefulSet)
-	owner := metav1.GetControllerOf(statefulSet)
-	if owner == nil {
-		return nil
-	}
-	if owner.APIVersion != imperatorv1alpha1.GroupVersion.String() || owner.Kind != consts.KindMachineNodePool {
-		return nil
-	}
-	return []string{owner.Name}
 }
