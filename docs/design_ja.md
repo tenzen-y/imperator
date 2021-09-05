@@ -52,10 +52,13 @@ spec:
   nodePool:
     - name: michiru
       mode: ready
+      assignmentType: taint
     - name: utaha
       mode: maintenance
+      assignmentType: label
     - name: eriri
       mode: ready
+      assignmentType: label
   machineTypes:
     - name: test-machine1
       spec:
@@ -64,7 +67,6 @@ spec:
         gpu: turing
         gpuNum: 1
         available: 4
-        hostLimit: 0.5
     - name: test-parent
       spec:
         cpu: 40
@@ -72,7 +74,6 @@ spec:
         gpu: ampere
         gpuNum: 2
         available: 1
-        hostLimit: 0.5
     - name: test-child
       spec:
         cpu: 20
@@ -83,7 +84,6 @@ spec:
           parent: vram-large1
           availableRatio: 0.5
         available: 2
-        hostLimit: 0.5
 status:
   condition:
     - lastTransitionTime: "2021-07-24T09:08:39Z"
@@ -122,10 +122,13 @@ spec:
   nodePool:
     - name: michiru
       mode: ready
+      assignmentType: taint
     - name: utaha
       mode: maintenance
+      assignmentType: label
     - name: eriri
       mode: ready
+      assignmentType: label
 status:
   condition:
     - lastTransitionTime: "2021-07-24T09:08:39Z"

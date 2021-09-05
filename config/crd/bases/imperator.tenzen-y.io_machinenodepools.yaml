@@ -50,6 +50,11 @@ spec:
                 description: NodePool is node list that machineGroup is managing.
                 items:
                   properties:
+                    assignmentType:
+                      enum:
+                      - label
+                      - taint
+                      type: string
                     mode:
                       enum:
                       - ready
@@ -58,6 +63,7 @@ spec:
                     name:
                       type: string
                   required:
+                  - assignmentType
                   - mode
                   - name
                   type: object

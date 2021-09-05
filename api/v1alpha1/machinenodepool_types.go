@@ -24,6 +24,10 @@ type NodePool struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=ready;maintenance
 	Mode string `json:"mode"`
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=label;taint
+	AssignmentType string `json:"assignmentType"`
 }
 
 // MachineNodePoolStatus defines the observed state of MachineNodePool
@@ -50,9 +54,9 @@ type NodePoolCondition struct {
 type MachineNodeCondition string
 
 const (
-	NodeReady       MachineNodeCondition = "Ready"
+	NodeHealthy     MachineNodeCondition = "Healthy"
 	NodeMaintenance MachineNodeCondition = "Maintenance"
-	NodeNotReady    MachineNodeCondition = "NotReady"
+	NodeUnhealthy   MachineNodeCondition = "Unhealthy"
 )
 
 const (
