@@ -339,7 +339,7 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 			Status:             metav1.ConditionTrue,
 			LastTransitionTime: metav1.Now(),
 			Reason:             metav1.StatusSuccess,
-			Message:            fmt.Sprintf("update status conditions"),
+			Message:            "update status conditions",
 		})
 		if err := r.Status().Update(ctx, pool, &client.UpdateOptions{}); err != nil {
 			return ctrl.Result{Requeue: true}, err
@@ -372,10 +372,7 @@ func (r *MachineNodePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 			newTaints := event.ObjectNew.(*corev1.Node).Spec.Taints
 			oldTaints := event.ObjectOld.(*corev1.Node).Spec.Taints
-			if !reflect.DeepEqual(newTaints, oldTaints) {
-				return true
-			}
-			return false
+			return !reflect.DeepEqual(newTaints, oldTaints)
 		},
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
 			return false
