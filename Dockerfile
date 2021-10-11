@@ -13,11 +13,12 @@ RUN go mod download
 # Copy the go source
 COPY cmd/ cmd/
 COPY api/ api/
+COPY pkg/ pkg/
 COPY controllers/ controllers/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags "-X github.com/tenzen-y/imperator/cmd/operator/cmd/version.version=${VERSION}" -a -o imperator cmd/operator/main.go
+    go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -a -o imperator cmd/operator/main.go
 
 # Use distroless as minimal base image to package the imperator binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

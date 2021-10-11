@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,43 +24,43 @@ type NodePool struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=ready;maintenance
 	Mode string `json:"mode"`
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=label;taint
+	AssignmentType string `json:"assignmentType"`
 }
 
 // MachineNodePoolStatus defines the observed state of MachineNodePool
 type MachineNodePoolStatus struct {
 
 	// +optional
-	Conditions []MachineNodePoolCondition `json:"condition,omitempty"`
+	Conditions []metav1.Condition `json:"condition,omitempty"`
 
 	// +optional
-	NodePoolCondition []NodePoolCondition `json:"nodePool"`
+	NodePoolCondition []NodePoolCondition `json:"nodePool,omitempty"`
 }
 
 type NodePoolCondition struct {
 
-	Name string `json:"name"`
+	// +optional
+	Name string `json:"name,omitempty"`
 
-	// +kubebuilder:validation:Enum=Healthy;Maintenance;Unhealthy
-	NodeCondition string `json:"condition"`
+	// +optional
+	NodeCondition MachineNodeCondition `json:"condition,omitempty"`
 }
 
-// MachineNodePoolCondition defines condition of MachineNodePool
-type MachineNodePoolCondition struct {
-	Type MachineNodePoolConditionType `json:"type"`
-
-	Status corev1.ConditionStatus `json:"status"`
-
-	Reason string `json:"reason,omitempty"`
-
-	LastTransitionTime metav1.Time `json:"LastTransitionTime"`
-}
-
-// MachineNodePoolConditionType is the type for MachineNodePool condition
-// +kubebuilder:validation:Enum=Ready
-type MachineNodePoolConditionType string
+// MachineNodeCondition is condition of Kubernetes Nodes
+// +kubebuilder:validation:Enum=Healthy;Maintenance;Unhealthy
+type MachineNodeCondition string
 
 const (
-	ConditionReady MachineNodePoolConditionType = "Ready"
+	NodeHealthy     MachineNodeCondition = "Healthy"
+	NodeMaintenance MachineNodeCondition = "Maintenance"
+	NodeUnhealthy   MachineNodeCondition = "Unhealthy"
+)
+
+const (
+	ConditionReady = "Ready"
 )
 
 // +kubebuilder:object:root=true
