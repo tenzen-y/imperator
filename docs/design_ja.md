@@ -62,25 +62,31 @@ spec:
   machineTypes:
     - name: test-machine1
       spec:
-        cpu: 6
-        memory: 48
-        gpu: turing
-        gpuNum: 1
+        cpu: 6000m
+        memory: 48Gi
+        gpu: #omitempty
+          type: nvidia.com/gpu
+          num: 1 
+          generation: turing
         available: 4
     - name: test-parent
       spec:
-        cpu: 40
-        memory: 128
-        gpu: ampere
-        gpuNum: 2
+        cpu: 40000m
+        memory: 128Gi
+        gpu: #omitempty
+          type: nvidia.com/gpu
+          num: 2
+          generation: ampere
         available: 1
     - name: test-child
       spec:
-        cpu: 20
-        memory: 64
-        gpu: ampere
-        gpuNum: 1
-        dependence:
+        cpu: 20000m
+        memory: 64Gi
+        gpu: #omitempty
+          type: nvidia.com/gpu
+          num: 1
+          generation: ampere
+        dependence: #omitempty
           parent: vram-large1
           availableRatio: 0.5
         available: 2
