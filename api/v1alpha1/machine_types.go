@@ -46,7 +46,6 @@ type MachineDetailSpec struct {
 }
 
 type GPUSpec struct {
-
 	Type string `json:"type,omitempty"`
 
 	Num resource.Quantity `json:"num,omitempty"`
@@ -55,10 +54,9 @@ type GPUSpec struct {
 }
 
 type Dependence struct {
-
 	Parent string `json:"parent"`
 
-	AvailableRatio float32 `json:"availableRatio"`
+	AvailableRatio string `json:"availableRatio"`
 }
 
 // MachineStatus defines the observed state of Machine
@@ -72,7 +70,6 @@ type MachineStatus struct {
 }
 
 type AvailableMachineCondition struct {
-
 	Name string `json:"name,omitempty"`
 
 	Usage UsageCondition `json:"usage,omitempty"`
