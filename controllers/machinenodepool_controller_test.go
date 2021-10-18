@@ -25,6 +25,13 @@ const (
 
 var testMachineNodePoolName = strings.Join([]string{testMachineGroupName, "node-pool"}, "-")
 
+type testNode struct {
+	name           string
+	mode           imperatorv1alpha1.NodePoolMode
+	status         imperatorv1alpha1.MachineNodeCondition
+	assignmentType imperatorv1alpha1.NodePoolAssignmentType
+}
+
 func createNode(ctx context.Context, testNodes []testNode) {
 
 	for _, n := range testNodes {
@@ -48,13 +55,6 @@ func createNode(ctx context.Context, testNodes []testNode) {
 		Expect(k8sClient.Create(ctx, node)).NotTo(HaveOccurred())
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, &corev1.Node{})).NotTo(HaveOccurred())
 	}
-}
-
-type testNode struct {
-	name           string
-	mode           imperatorv1alpha1.NodePoolMode
-	status         imperatorv1alpha1.MachineNodeCondition
-	assignmentType imperatorv1alpha1.NodePoolAssignmentType
 }
 
 func newTestMachineNodePool(testNodes []testNode) *imperatorv1alpha1.MachineNodePool {

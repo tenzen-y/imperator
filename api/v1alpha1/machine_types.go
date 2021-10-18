@@ -26,6 +26,18 @@ type MachineType struct {
 
 	// +kubebuilder:validation:Required
 	Spec MachineDetailSpec `json:"spec"`
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum:=0
+	Available int `json:"available"`
+
+	Dependence *Dependence `json:"dependence,omitempty"`
+}
+
+type Dependence struct {
+	Parent string `json:"parent,omitempty"`
+
+	AvailableRatio string `json:"availableRatio,omitempty"`
 }
 
 type MachineDetailSpec struct {
@@ -36,13 +48,7 @@ type MachineDetailSpec struct {
 	// +kubebuilder:validation:Required
 	Memory resource.Quantity `json:"memory"`
 
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Minimum:=0
-	Available int `json:"available"`
-
 	GPU *GPUSpec `json:"gpu,omitempty"`
-
-	Dependence *Dependence `json:"dependence,omitempty"`
 }
 
 type GPUSpec struct {
@@ -51,12 +57,6 @@ type GPUSpec struct {
 	Num resource.Quantity `json:"num,omitempty"`
 
 	Generation string `json:"generation,omitempty"`
-}
-
-type Dependence struct {
-	Parent string `json:"parent"`
-
-	AvailableRatio string `json:"availableRatio"`
 }
 
 // MachineStatus defines the observed state of Machine

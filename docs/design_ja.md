@@ -45,7 +45,7 @@ machine の数量管理では，Pod リソースを監視する．
 
 ```yaml
 ---
-apiVersion: imperator.io/v1alpha1
+apiVersion: imperator.tenzen-y.io/v1alpha1
 kind: Machine
 metadata:
   name: general-machine
@@ -71,7 +71,7 @@ spec:
           type: nvidia.com/gpu
           num: 1 
           generation: turing
-        available: 4
+      available: 4
     - name: utaha
       spec:
         cpu: 40000m
@@ -80,7 +80,7 @@ spec:
           type: nvidia.com/gpu
           num: 2
           generation: ampere
-        available: 1
+      available: 1
     - name: eriri
       spec:
         cpu: 20000m
@@ -89,10 +89,10 @@ spec:
           type: nvidia.com/gpu
           num: 1
           generation: ampere
-        dependence: #omitempty
-          parent: vram-large1
-          availableRatio: 0.5
-        available: 2
+      dependence: #omitempty
+        parent: vram-large1
+        availableRatio: 0.5
+      available: 2
 status:
   condition:
     - lastTransitionTime: "2021-07-24T09:08:39Z"
