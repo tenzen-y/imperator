@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -9,17 +10,78 @@ import (
 
 // MachineSpec defines the desired state of Machine
 type MachineSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Machine. Edit machine_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// NodePool is node list that machineGroup is managing.
+	// +kubebuilder:validation:Required
+	NodePool []NodePool `json:"nodePool"`
+
+	// +kubebuilder:validation:Required
+	MachineTypes []MachineType `json:"machineTypes"`
+}
+
+type MachineType struct {
+
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+
+	// +kubebuilder:validation:Required
+	Spec MachineDetailSpec `json:"spec"`
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum:=0
+	Available int `json:"available"`
+
+	Dependence *Dependence `json:"dependence,omitempty"`
+}
+
+type Dependence struct {
+	Parent string `json:"parent,omitempty"`
+
+	AvailableRatio string `json:"availableRatio,omitempty"`
+}
+
+type MachineDetailSpec struct {
+
+	// +kubebuilder:validation:Required
+	CPU resource.Quantity `json:"cpu"`
+
+	// +kubebuilder:validation:Required
+	Memory resource.Quantity `json:"memory"`
+
+	GPU *GPUSpec `json:"gpu,omitempty"`
+}
+
+type GPUSpec struct {
+	Type string `json:"type,omitempty"`
+
+	Num resource.Quantity `json:"num,omitempty"`
+
+	Generation string `json:"generation,omitempty"`
 }
 
 // MachineStatus defines the observed state of Machine
 type MachineStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+
+	// +optional
+	Conditions []metav1.Condition `json:"condition,omitempty"`
+
+	// +optional
+	AvailableMachines AvailableMachineCondition `json:"availableMachines,omitempty"`
+}
+
+type AvailableMachineCondition struct {
+	Name string `json:"name,omitempty"`
+
+	Usage UsageCondition `json:"usage,omitempty"`
+}
+
+type UsageCondition struct {
+
+	// +kubebuilder:validation:Minimum:=0
+	Maximum int `json:"maximum,omitempty"`
+
+	// +kubebuilder:validation:Minimum:=0
+	Used int `json:"used,omitempty"`
 }
 
 //+kubebuilder:object:root=true

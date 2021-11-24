@@ -13,7 +13,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-imperator-imprator-io-v1alpha1-machine
+      path: /mutate-imperator-tenzen-y-io-v1alpha1-machine
   failurePolicy: Fail
   name: mmachine.kb.io
   rules:
@@ -42,7 +42,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-imperator-imprator-io-v1alpha1-machine
+      path: /validate-imperator-tenzen-y-io-v1alpha1-machine
   failurePolicy: Fail
   name: vmachine.kb.io
   rules:

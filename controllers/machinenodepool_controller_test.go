@@ -25,6 +25,13 @@ const (
 
 var testMachineNodePoolName = strings.Join([]string{testMachineGroupName, "node-pool"}, "-")
 
+type testNode struct {
+	name           string
+	mode           imperatorv1alpha1.NodePoolMode
+	status         imperatorv1alpha1.MachineNodeCondition
+	assignmentType imperatorv1alpha1.NodePoolAssignmentType
+}
+
 func createNode(ctx context.Context, testNodes []testNode) {
 
 	for _, n := range testNodes {
@@ -48,13 +55,6 @@ func createNode(ctx context.Context, testNodes []testNode) {
 		Expect(k8sClient.Create(ctx, node)).NotTo(HaveOccurred())
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, &corev1.Node{})).NotTo(HaveOccurred())
 	}
-}
-
-type testNode struct {
-	name           string
-	mode           string
-	status         imperatorv1alpha1.MachineNodeCondition
-	assignmentType string
 }
 
 func newTestMachineNodePool(testNodes []testNode) *imperatorv1alpha1.MachineNodePool {
@@ -97,7 +97,7 @@ func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 		Eventually(func() map[string]string {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, target)).NotTo(HaveOccurred())
 			// label
-			if n.assignmentType == consts.AssignLabel {
+			if n.assignmentType == imperatorv1alpha1.AssignmentTypeLabel {
 				return target.Labels
 			}
 			// taint
@@ -107,10 +107,10 @@ func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 		}, suiteTestTimeOut).ShouldNot(BeEmpty())
 
 		actual := target.Labels
-		if n.assignmentType == consts.AssignTaint {
+		if n.assignmentType == imperatorv1alpha1.AssignmentTypeTaint {
 			actual = extractKeyValueFromTaint(target.Spec.Taints)
 		}
-		Expect(actual).To(HaveKeyWithValue(consts.MachineStatusKey, n.mode))
+		Expect(actual).To(HaveKeyWithValue(consts.MachineStatusKey, n.mode.Value()))
 		Expect(target.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineGroupName))
 	}
 }
@@ -157,21 +157,21 @@ var _ = Describe("imperator reconciler", func() {
 	testNodes := []testNode{
 		{
 			name:           readyTestNodeA,
-			mode:           consts.MachineStatusReady,
+			mode:           imperatorv1alpha1.NodeModeReady,
 			status:         imperatorv1alpha1.NodeHealthy,
-			assignmentType: consts.AssignLabel,
+			assignmentType: imperatorv1alpha1.AssignmentTypeLabel,
 		},
 		{
 			name:           readyTestNodeB,
-			mode:           consts.MachineStatusReady,
+			mode:           imperatorv1alpha1.NodeModeReady,
 			status:         imperatorv1alpha1.NodeHealthy,
-			assignmentType: consts.AssignTaint,
+			assignmentType: imperatorv1alpha1.AssignmentTypeTaint,
 		},
 		{
 			name:           maintenanceTestNode,
-			mode:           consts.MachineStatusMaintenance,
+			mode:           imperatorv1alpha1.NodeModeMaintenance,
 			status:         imperatorv1alpha1.NodeMaintenance,
-			assignmentType: consts.AssignLabel,
+			assignmentType: imperatorv1alpha1.AssignmentTypeLabel,
 		},
 	}
 
@@ -241,7 +241,7 @@ var _ = Describe("imperator reconciler", func() {
 				// label
 				actual = target.Labels
 				// taint
-				if n.assignmentType == consts.AssignTaint {
+				if n.assignmentType == imperatorv1alpha1.AssignmentTypeTaint {
 					actual = extractKeyValueFromTaint(target.Spec.Taints)
 					delete(actual, "node.kubernetes.io/not-ready")
 				}
@@ -286,7 +286,7 @@ var _ = Describe("imperator reconciler", func() {
 			return ""
 		}, suiteTestTimeOut).Should(Equal(corev1.TaintEffectNoSchedule))
 
-		readyTestNodeAAssignmentType := ""
+		readyTestNodeAAssignmentType := imperatorv1alpha1.NodePoolAssignmentType("")
 		for _, n := range testNodes {
 			if n.name != readyTestNodeA {
 				continue
@@ -297,11 +297,11 @@ var _ = Describe("imperator reconciler", func() {
 		Eventually(func() string {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: readyTestNodeA}, getReadyTestNodeA)).NotTo(HaveOccurred())
 			actual := getReadyTestNodeA.Labels[consts.MachineStatusKey]
-			if readyTestNodeAAssignmentType == consts.AssignTaint {
+			if readyTestNodeAAssignmentType == imperatorv1alpha1.AssignmentTypeTaint {
 				actual = extractKeyValueFromTaint(getReadyTestNodeA.Spec.Taints)[consts.MachineStatusKey]
 			}
 			return actual
-		}, suiteTestTimeOut).Should(Equal(consts.MachineStatusNotReady))
+		}, suiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
 
 		getPool := &imperatorv1alpha1.MachineNodePool{}
 		Eventually(func() imperatorv1alpha1.MachineNodeCondition {
@@ -339,7 +339,7 @@ var _ = Describe("imperator reconciler", func() {
 			return ""
 		}, suiteTestTimeOut).Should(Equal(corev1.TaintEffectNoSchedule))
 
-		readyTestNodeBAssignmentType := ""
+		readyTestNodeBAssignmentType := imperatorv1alpha1.NodePoolAssignmentType("")
 		for _, n := range testNodes {
 			if n.name != readyTestNodeB {
 				continue
@@ -351,11 +351,11 @@ var _ = Describe("imperator reconciler", func() {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: readyTestNodeB}, getReadyTestNodeB)).NotTo(HaveOccurred())
 
 			actual := getReadyTestNodeB.Labels[consts.MachineStatusKey]
-			if readyTestNodeBAssignmentType == consts.AssignTaint {
+			if readyTestNodeBAssignmentType == imperatorv1alpha1.AssignmentTypeTaint {
 				actual = extractKeyValueFromTaint(getReadyTestNodeB.Spec.Taints)[consts.MachineStatusKey]
 			}
 			return actual
-		}, suiteTestTimeOut).Should(Equal(consts.MachineStatusNotReady))
+		}, suiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
 
 		getPool = &imperatorv1alpha1.MachineNodePool{}
 		Eventually(func() imperatorv1alpha1.MachineNodeCondition {
@@ -382,10 +382,10 @@ var _ = Describe("imperator reconciler", func() {
 		for _, node := range newTestNodes {
 			switch node.name {
 			case readyTestNodeA:
-				node.mode = consts.MachineStatusMaintenance
+				node.mode = imperatorv1alpha1.NodeModeMaintenance
 				node.status = imperatorv1alpha1.NodeMaintenance
 			case maintenanceTestNode:
-				node.mode = consts.MachineStatusReady
+				node.mode = imperatorv1alpha1.NodeModeReady
 				node.status = imperatorv1alpha1.ConditionReady
 			}
 		}
@@ -411,11 +411,11 @@ var _ = Describe("imperator reconciler", func() {
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: node.name}, getNode)).NotTo(HaveOccurred())
 
 				actual := getNode.Labels[consts.MachineStatusKey]
-				if node.assignmentType == consts.AssignTaint {
+				if node.assignmentType == imperatorv1alpha1.AssignmentTypeTaint {
 					actual = extractKeyValueFromTaint(getNode.Spec.Taints)[consts.MachineStatusKey]
 				}
 				return actual
-			}, suiteTestTimeOut).Should(Equal(node.mode))
+			}, suiteTestTimeOut).Should(Equal(node.mode.Value()))
 
 		}
 	})
@@ -430,11 +430,11 @@ var _ = Describe("imperator reconciler", func() {
 		for _, n := range newTestNodes {
 			switch n.name {
 			case readyTestNodeA:
-				n.assignmentType = consts.AssignTaint
+				n.assignmentType = imperatorv1alpha1.AssignmentTypeTaint
 			case readyTestNodeB:
-				n.assignmentType = consts.AssignLabel
+				n.assignmentType = imperatorv1alpha1.AssignmentTypeLabel
 			case maintenanceTestNode:
-				n.assignmentType = consts.AssignTaint
+				n.assignmentType = imperatorv1alpha1.AssignmentTypeTaint
 			}
 		}
 		updateTestMachineNodePoolNodePool(ctx, newTestNodes)
@@ -446,20 +446,20 @@ var _ = Describe("imperator reconciler", func() {
 			Eventually(func() map[string]string {
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: tn.name}, getNode)).NotTo(HaveOccurred())
 				actual = getNode.Labels
-				if tn.assignmentType == consts.AssignTaint {
+				if tn.assignmentType == imperatorv1alpha1.AssignmentTypeTaint {
 					actual = extractKeyValueFromTaint(getNode.Spec.Taints)
 					delete(actual, "node.kubernetes.io/not-ready")
 				}
 				return actual
 			}, suiteTestTimeOut).Should(HaveLen(1))
 
-			Expect(actual).To(HaveKeyWithValue(consts.MachineStatusKey, tn.mode))
+			Expect(actual).To(HaveKeyWithValue(consts.MachineStatusKey, tn.mode.Value()))
 			Expect(getNode.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineGroupName))
 
 			// must not have any elements
 			actual = extractKeyValueFromTaint(getNode.Spec.Taints)
 			delete(actual, "node.kubernetes.io/not-ready")
-			if tn.assignmentType == consts.AssignTaint {
+			if tn.assignmentType == imperatorv1alpha1.AssignmentTypeTaint {
 				actual = getNode.Labels
 			}
 			Expect(actual).Should(BeEmpty())
@@ -483,9 +483,9 @@ var _ = Describe("imperator reconciler", func() {
 		newTestNodes := testNodes
 		newTestNodes = append(newTestNodes, testNode{
 			name:           "fake-node",
-			mode:           consts.MachineStatusReady,
+			mode:           imperatorv1alpha1.NodeModeReady,
 			status:         imperatorv1alpha1.NodeHealthy,
-			assignmentType: consts.AssignTaint,
+			assignmentType: imperatorv1alpha1.AssignmentTypeTaint,
 		})
 
 		pool := newTestMachineNodePool(newTestNodes)

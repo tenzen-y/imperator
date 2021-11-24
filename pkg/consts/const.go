@@ -17,8 +17,6 @@ const (
 	// controller name
 	OwnerControllerField     = ".metadata.ownerReference.controller"
 	MachineNodePoolFinalizer = "imperator-machinenodepool-finalizer"
-	AssignLabel              = "label"
-	AssignTaint              = "taint"
 )
 
 var (

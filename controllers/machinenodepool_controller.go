@@ -202,11 +202,11 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			return err
 		}
 		switch p.AssignmentType {
-		case consts.AssignLabel:
+		case imperatorv1alpha1.AssignmentTypeLabel:
 			if err := r.removeNodeTaint(ctx, pool, node); err != nil {
 				return err
 			}
-		case consts.AssignTaint:
+		case imperatorv1alpha1.AssignmentTypeTaint:
 			if err := r.removeNodeLabel(ctx, pool, node); err != nil {
 				return err
 			}
@@ -230,7 +230,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			taints[t.Key] = t
 		}
 
-		newPoolMachineStatusValue := consts.MachineStatusReady
+		newPoolMachineStatusValue := imperatorv1alpha1.NodeModeReady
 		// looking for down Node.
 		for _, t := range consts.CannotUseNodeTaints {
 			if _, exist := taints[t]; !exist {
@@ -239,23 +239,23 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			if os.Getenv("ENVTEST") == "true" && t == "node.kubernetes.io/not-ready" {
 				continue
 			}
-			newPoolMachineStatusValue = consts.MachineStatusNotReady
+			newPoolMachineStatusValue = imperatorv1alpha1.NodeModeNotReady
 			break
 		}
-		if p.Mode == consts.MachineStatusMaintenance {
-			newPoolMachineStatusValue = consts.MachineStatusMaintenance
+		if p.Mode == imperatorv1alpha1.NodeModeMaintenance {
+			newPoolMachineStatusValue = imperatorv1alpha1.NodeModeMaintenance
 		}
 
 		switch p.AssignmentType {
-		case consts.AssignLabel:
+		case imperatorv1alpha1.AssignmentTypeLabel:
 			if newNode.Labels == nil {
 				newNode.Labels = map[string]string{}
 			}
-			newNode.Labels[consts.MachineStatusKey] = newPoolMachineStatusValue
+			newNode.Labels[consts.MachineStatusKey] = newPoolMachineStatusValue.Value()
 			if reflect.DeepEqual(node.Labels, newNode.Labels) {
 				continue
 			}
-		case consts.AssignTaint:
+		case imperatorv1alpha1.AssignmentTypeTaint:
 			if newNode.Spec.Taints == nil {
 				newNode.Spec.Taints = []corev1.Taint{}
 			}
@@ -265,7 +265,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			if _, exist := taints[consts.MachineStatusKey]; !exist {
 				newNode.Spec.Taints = append(newNode.Spec.Taints, corev1.Taint{
 					Key:       consts.MachineStatusKey,
-					Value:     newPoolMachineStatusValue,
+					Value:     newPoolMachineStatusValue.Value(),
 					Effect:    corev1.TaintEffectNoSchedule,
 					TimeAdded: &now,
 				})
@@ -276,7 +276,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 					}
 					newNode.Spec.Taints[i] = corev1.Taint{
 						Key:       consts.MachineStatusKey,
-						Value:     newPoolMachineStatusValue,
+						Value:     newPoolMachineStatusValue.Value(),
 						Effect:    corev1.TaintEffectNoSchedule,
 						TimeAdded: &now,
 					}
@@ -307,7 +307,7 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 		}
 
 		nodeLabelCondition := node.Labels[consts.MachineStatusKey]
-		if p.AssignmentType == consts.AssignTaint {
+		if p.AssignmentType == imperatorv1alpha1.AssignmentTypeTaint {
 			for _, t := range node.Spec.Taints {
 				if t.Key != consts.MachineStatusKey {
 					continue
@@ -317,11 +317,11 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 		}
 
 		nc := imperatorv1alpha1.MachineNodeCondition("")
-		if p.Mode == consts.MachineStatusMaintenance {
+		if p.Mode == imperatorv1alpha1.NodeModeMaintenance {
 			nc = imperatorv1alpha1.NodeMaintenance
-		} else if nodeLabelCondition == consts.MachineStatusReady {
+		} else if nodeLabelCondition == imperatorv1alpha1.NodeModeReady.Value() {
 			nc = imperatorv1alpha1.NodeHealthy
-		} else if nodeLabelCondition == consts.MachineStatusNotReady {
+		} else if nodeLabelCondition == imperatorv1alpha1.NodeModeNotReady.Value() {
 			nc = imperatorv1alpha1.NodeUnhealthy
 		}
 

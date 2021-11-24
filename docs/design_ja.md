@@ -13,6 +13,8 @@ Imperator は Kubernetes Operator Pattern の controller で，2 つの controll
 
 2. MachineNodePool controller
 
+Note: v1alpha1 では 1 つの Node を複数の Machine グループに参加させることはできない．
+
 ## controller の設計
 Machine CR の作成後， MachineLearning CR 作成後までのシーケンス図は以下のようになっている．
 
@@ -29,6 +31,7 @@ machine の数量管理では，Pod リソースを監視する．
     - Terminating: `.metadata.deletionTimestamp` が nil ではない場合．
 
 ### NodePool controller
+- Node の Annotation　に `imperator.io/machine-group=グループ名` を付与する．
 - nodePool の mode が ready のノードに `imperator/nodePool=ready` のラベルをつける．
   nodePool に無いノードもしくは， mode が `ready` ではなくなったノードや status が `not-ready` では無くなったノードからはラベルを削除する．
 - status の nodePool 欄 condition は，定期的に node を監視し，健康状態に応じて変更する．
@@ -42,7 +45,7 @@ machine の数量管理では，Pod リソースを監視する．
 
 ```yaml
 ---
-apiVersion: imperator.io/v1alpha1
+apiVersion: imperator.tenzen-y.io/v1alpha1
 kind: Machine
 metadata:
   name: general-machine
@@ -52,53 +55,59 @@ spec:
   nodePool:
     - name: michiru
       mode: ready
-      assignmentType: taint
+      assignmentType: taint # omitempty;default=label
     - name: utaha
       mode: maintenance
-      assignmentType: label
+      assignmentType: label # omitempty;default=label
     - name: eriri
       mode: ready
-      assignmentType: label
+      assignmentType: label # omitempty;default=label
   machineTypes:
-    - name: test-machine1
+    - name: michiru
       spec:
-        cpu: 6
-        memory: 48
-        gpu: turing
-        gpuNum: 1
-        available: 4
-    - name: test-parent
+        cpu: 6000m
+        memory: 48Gi
+        gpu: #omitempty
+          type: nvidia.com/gpu
+          num: 1 
+          generation: turing
+      available: 4
+    - name: utaha
       spec:
-        cpu: 40
-        memory: 128
-        gpu: ampere
-        gpuNum: 2
-        available: 1
-    - name: test-child
+        cpu: 40000m
+        memory: 128Gi
+        gpu: #omitempty
+          type: nvidia.com/gpu
+          num: 2
+          generation: ampere
+      available: 1
+    - name: eriri
       spec:
-        cpu: 20
-        memory: 64
-        gpu: ampere
-        gpuNum: 1
-        dependence:
-          parent: vram-large1
-          availableRatio: 0.5
-        available: 2
+        cpu: 20000m
+        memory: 64Gi
+        gpu: #omitempty
+          type: nvidia.com/gpu
+          num: 1
+          generation: ampere
+      dependence: #omitempty
+        parent: vram-large1
+        availableRatio: 0.5
+      available: 2
 status:
   condition:
     - lastTransitionTime: "2021-07-24T09:08:39Z"
       status: "True"
       type: Ready
   availableMachines:
-    - name: test-machine1
+    - name: michiru
       usage:
         maximum: 4
         used: 1
-    - name: test-parent
+    - name: utaha
       usage:
         maximum: 1
         used: 0.5
-    - name: test-child
+    - name: eriri
       usage:
         maximum: 2
         used: 1

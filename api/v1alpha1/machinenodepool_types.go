@@ -23,12 +23,31 @@ type NodePool struct {
 
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=ready;maintenance
-	Mode string `json:"mode"`
+	Mode NodePoolMode `json:"mode"`
 
-	// +kubebuilder:validation:Required
+	// +optional
 	// +kubebuilder:validation:Enum=label;taint
-	AssignmentType string `json:"assignmentType"`
+	AssignmentType NodePoolAssignmentType `json:"assignmentType"`
 }
+
+type NodePoolMode string
+
+const (
+	NodeModeReady       NodePoolMode = "ready"
+	NodeModeNotReady    NodePoolMode = "not-ready"
+	NodeModeMaintenance NodePoolMode = "maintenance"
+)
+
+func (mode NodePoolMode) Value() string {
+	return string(mode)
+}
+
+type NodePoolAssignmentType string
+
+const (
+	AssignmentTypeLabel NodePoolAssignmentType = "label"
+	AssignmentTypeTaint NodePoolAssignmentType = "taint"
+)
 
 // MachineNodePoolStatus defines the observed state of MachineNodePool
 type MachineNodePoolStatus struct {
