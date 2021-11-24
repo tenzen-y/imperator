@@ -2,14 +2,13 @@ package controllers
 
 import (
 	"context"
+	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"k8s.io/client-go/tools/record"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	imperatorv1alpha1 "github.com/tenzen-y/imperator/api/v1alpha1"
 )
 
 // MachineReconciler reconciles a Machine object
