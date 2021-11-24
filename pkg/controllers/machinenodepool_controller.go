@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	imperatorv1alpha1 "github.com/tenzen-y/imperator/api/v1alpha1"
+	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

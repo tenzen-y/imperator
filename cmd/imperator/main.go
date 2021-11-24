@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/tenzen-y/imperator/cmd/operator/cmd"
+	"github.com/tenzen-y/imperator/cmd/imperator/cmd"
 	"os"
 )
 
