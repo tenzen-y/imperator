@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -66,6 +67,9 @@ func (r *Machine) ValidateDelete() error {
 }
 
 func (r *Machine) ValidateAllOperation() error {
+	if err := r.ValidateLabel(); err != nil {
+		return err
+	}
 	if err := r.ValidateNodeName(); err != nil {
 		return err
 	}
@@ -74,6 +78,13 @@ func (r *Machine) ValidateAllOperation() error {
 	}
 	if err := r.ValidateDependence(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (r *Machine) ValidateLabel() error {
+	if _, exist := r.Labels[consts.MachineGroupKey]; !exist {
+		return fmt.Errorf("%s is must be set in .metadata.labels", consts.MachineGroupKey)
 	}
 	return nil
 }

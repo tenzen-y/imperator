@@ -61,7 +61,7 @@ func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, pool *imperat
 	logger := log.FromContext(ctx)
 
 	if pool.ObjectMeta.DeletionTimestamp.IsZero() {
-		if !controllerutil.ContainsFinalizer(pool, consts.MachineNodePoolFinalizer) {
+		if ! controllerutil.ContainsFinalizer(pool, consts.MachineNodePoolFinalizer) {
 			controllerutil.AddFinalizer(pool, consts.MachineNodePoolFinalizer)
 			if err := r.Update(ctx, pool); err != nil {
 				return ctrl.Result{}, err

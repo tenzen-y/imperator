@@ -2,9 +2,9 @@ package consts
 
 // label key
 const (
-	MachineGroupKey  = "imperator.io/machine-group"
-	MachineStatusKey = "imperator.io/node-pool"
-	MachineName      = "imperator.io/machine"
+	MachineGroupKey  = "imperator.tenzen-y.io/machine-group"
+	MachineStatusKey = "imperator.tenzen-y.io/node-pool"
+	MachineName      = "imperator.tenzen-y.io/machine"
 	K8sAppNameKey    = "app.kubernetes.io/name"
 	K8sAppVersionKey = "app.kubernetes.io/version"
 	// label value

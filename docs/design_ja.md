@@ -9,7 +9,7 @@ Provide virtual resource group to applications.
 Imperator は Kubernetes Operator Pattern の controller で，2 つの controller が動作しています．
 
 1. Machine Controller
-    - Machine リソースで定義されたリソースで StatefullSet で reserved コンテナを作成する．
+    - Machine リソースで定義されたリソースで StatefulSet で reserved コンテナを作成する．
 
 2. MachineNodePool controller
 
@@ -125,7 +125,7 @@ kind: MachineNodePool
 metadata:
   name: general-machine-node-pool
   labels:
-    imperator.io/machine-group: general-machine
+    imperator.tenzen-y.io/machine-group: general-machine
 spec:
   machineGroup: general-machine
   nodePool:

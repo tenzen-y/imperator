@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tenzen-y/imperator/pkg/consts"
@@ -136,6 +137,15 @@ var _ = Describe("Machine Webhook", func() {
 				description: "All items are valid",
 				fakeMachine: newFakeMachine(),
 				err:         false,
+			},
+			{
+				description: fmt.Sprintf("Missing key, %s in labels", consts.MachineGroupKey),
+				fakeMachine: func() *Machine {
+					fakeMachine := newFakeMachine()
+					delete(fakeMachine.Labels, consts.MachineGroupKey)
+					return fakeMachine
+				}(),
+				err: true,
 			},
 			{
 				description: "Specified non exist node name to nodePool",
