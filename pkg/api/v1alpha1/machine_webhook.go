@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -111,9 +112,26 @@ func (r *Machine) ValidateAssignmentType() error {
 }
 
 func (r *Machine) ValidateLabel() error {
-	if _, exist := r.Labels[consts.MachineGroupKey]; !exist {
+	machineGroupName, exist := r.Labels[consts.MachineGroupKey]
+	if !exist {
 		return fmt.Errorf("%s is must be set in .metadata.labels", consts.MachineGroupKey)
 	}
+
+	machines := &MachineList{}
+	if err := kubeReader.List(context.Background(), machines, &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			consts.MachineGroupKey: machineGroupName,
+		}),
+	}); err != nil {
+		return err
+	}
+
+	for _, m := range machines.Items {
+		if m.Name != r.Name {
+			return fmt.Errorf("machineGroup label is duplicate, machineGroup must be set as unique")
+		}
+	}
+
 	return nil
 }
 

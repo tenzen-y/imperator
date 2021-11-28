@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	"github.com/tenzen-y/imperator/pkg/utils"
+	"github.com/tenzen-y/imperator/pkg/controllers/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -47,7 +47,7 @@ func createNode(ctx context.Context, testNodes []testNode) {
 	for _, n := range testNodes {
 		node := &corev1.Node{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
+				APIVersion: corev1.SchemeGroupVersion.String(),
 				Kind:       "Node",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -71,7 +71,7 @@ func newTestMachineNodePool(testNodes []testNode, testMachineTypes []testMachine
 	pool := &imperatorv1alpha1.MachineNodePool{}
 	pool.TypeMeta = metav1.TypeMeta{
 		Kind:       consts.KindMachineNodePool,
-		APIVersion: imperatorv1alpha1.GetAPIVersion(),
+		APIVersion: imperatorv1alpha1.GroupVersion.String(),
 	}
 	pool.ObjectMeta = metav1.ObjectMeta{
 		Name: testMachineNodePoolName,
@@ -188,7 +188,7 @@ func updateTestMachineNodePoolMachineType(ctx context.Context, patch []testNode)
 	Expect(k8sClient.Update(ctx, machineNodePool, &client.UpdateOptions{})).NotTo(HaveOccurred())
 }
 
-var _ = Describe("imperator reconciler", func() {
+var _ = Describe("machinenodepool controller envtest", func() {
 	ctx := context.Background()
 	var stopFunc func()
 

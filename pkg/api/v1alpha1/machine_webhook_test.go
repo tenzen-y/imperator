@@ -11,7 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 const (
@@ -21,7 +20,7 @@ const (
 func newFakeMachine() *Machine {
 	return &Machine{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: GetAPIVersion(),
+			APIVersion: GroupVersion.String(),
 			Kind:       consts.KindMachine,
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -123,11 +122,8 @@ func createNodes(ctx context.Context) {
 
 func getNodeTypeMeta() metav1.TypeMeta {
 	return metav1.TypeMeta{
-		APIVersion: strings.Join([]string{
-			corev1.SchemeGroupVersion.Group,
-			corev1.SchemeGroupVersion.Version,
-		}, "/"),
-		Kind: "Node",
+		APIVersion: corev1.SchemeGroupVersion.String(),
+		Kind:       "Node",
 	}
 }
 
@@ -148,9 +144,10 @@ var _ = Describe("Machine Webhook", func() {
 
 	It("Failed to create Machine resource", func() {
 		testCases := []struct {
-			description string
-			fakeMachine *Machine
-			err         bool
+			description   string
+			fakeMachine   *Machine
+			kubeResources []client.Object
+			err           bool
 		}{
 			{
 				description: "All items are valid",
@@ -163,6 +160,16 @@ var _ = Describe("Machine Webhook", func() {
 					fakeMachine := newFakeMachine()
 					delete(fakeMachine.Labels, consts.MachineGroupKey)
 					return fakeMachine
+				}(),
+				err: true,
+			},
+			{
+				description: "MachineGroup label is duplicated",
+				fakeMachine: newFakeMachine(),
+				kubeResources: func() []client.Object {
+					duplicatedMachineGroupMachine := newFakeMachine()
+					duplicatedMachineGroupMachine.Name = "duplicated-machine-group"
+					return []client.Object{duplicatedMachineGroupMachine}
 				}(),
 				err: true,
 			},
@@ -304,6 +311,11 @@ var _ = Describe("Machine Webhook", func() {
 		}
 
 		for _, test := range testCases {
+			if len(test.kubeResources) > 0 {
+				for _, o := range test.kubeResources {
+					Expect(k8sClient.Create(ctx, o, &client.CreateOptions{})).NotTo(HaveOccurred(), test.description)
+				}
+			}
 			err := k8sClient.Create(ctx, test.fakeMachine, &client.CreateOptions{})
 			if test.err {
 				Expect(err).To(HaveOccurred(), test.description)
@@ -311,6 +323,11 @@ var _ = Describe("Machine Webhook", func() {
 				Expect(err).NotTo(HaveOccurred(), test.description)
 			}
 			Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred(), test.description)
+			if len(test.kubeResources) > 0 {
+				for _, o := range test.kubeResources {
+					Expect(k8sClient.DeleteAllOf(ctx, o, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred(), test.description)
+				}
+			}
 		}
 	})
 })

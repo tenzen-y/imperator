@@ -6,7 +6,6 @@ package v1alpha1
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
-	"strings"
 )
 
 var (
@@ -20,7 +19,3 @@ var (
 
 	AddToScheme = SchemeBuilder.AddToScheme
 )
-
-func GetAPIVersion() string {
-	return strings.Join([]string{GroupVersion.Group, GroupVersion.Version}, "/")
-}

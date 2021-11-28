@@ -5,7 +5,7 @@ import (
 	"fmt"
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	"github.com/tenzen-y/imperator/pkg/utils"
+	"github.com/tenzen-y/imperator/pkg/controllers/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"

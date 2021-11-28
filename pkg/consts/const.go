@@ -2,18 +2,17 @@ package consts
 
 // label key
 const (
-	MachineGroupKey  = "imperator.tenzen-y.io/machine-group"
-	MachineStatusKey = "imperator.tenzen-y.io/node-pool"
-	MachineName      = "imperator.tenzen-y.io/machine"
-	K8sAppNameKey    = "app.kubernetes.io/name"
-	K8sAppVersionKey = "app.kubernetes.io/version"
+	MachineGroupKey    = "imperator.tenzen-y.io/machine-group"
+	MachineStatusKey   = "imperator.tenzen-y.io/node-pool"
+	MachineTypeKey     = "imperator.tenzen-y.io/machine-type"
+	PodRoleKey         = "imperator.tenzen-y.io/pod-role"
+	StatefulSetImage   = "alpine:3.15.0"
+	NvidiaGPUFamilyKey = "nvidia.com/gpu.family"
 	// label value
-	K8sAppNameValue          = "imperator"
-	KindMachineNodePool      = "MachineNodePool"
-	KindMachine              = "Machine"
-	MachineStatusReady       = "ready"
-	MachineStatusNotReady    = "not-ready"
-	MachineStatusMaintenance = "maintenance"
+	KindMachineNodePool = "MachineNodePool"
+	KindMachine         = "Machine"
+	PodRoleReservation  = "reservation"
+	PodRoleGuest        = "guest"
 	// controller name
 	OwnerControllerField     = ".metadata.ownerReference.controller"
 	MachineNodePoolFinalizer = "imperator-machinenodepool-finalizer"
@@ -26,4 +25,5 @@ var (
 		"node.kubernetes.io/network-unavailable",
 		"node.kubernetes.io/unreachable",
 	}
+	ImperatorCoreNamespace = getEnvVarOrDefault("IMPERATOR_CORE_NAMESPACE", "imperator-system")
 )

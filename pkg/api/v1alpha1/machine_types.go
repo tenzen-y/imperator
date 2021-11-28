@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,14 +30,18 @@ type MachineType struct {
 
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum:=0
-	Available int `json:"available"`
+	Available int32 `json:"available"`
 
+	// +optional
 	Dependence *Dependence `json:"dependence,omitempty"`
 }
 
 type Dependence struct {
+
+	// +optional
 	Parent string `json:"parent,omitempty"`
 
+	// +optional
 	AvailableRatio string `json:"availableRatio,omitempty"`
 }
 
@@ -48,14 +53,19 @@ type MachineDetailSpec struct {
 	// +kubebuilder:validation:Required
 	Memory resource.Quantity `json:"memory"`
 
+	// +optional
 	GPU *GPUSpec `json:"gpu,omitempty"`
 }
 
 type GPUSpec struct {
-	Type string `json:"type,omitempty"`
 
+	// +optional
+	Type corev1.ResourceName `json:"type,omitempty"`
+
+	// +optional
 	Num resource.Quantity `json:"num,omitempty"`
 
+	// +optional
 	Generation string `json:"generation,omitempty"`
 }
 
@@ -66,22 +76,31 @@ type MachineStatus struct {
 	Conditions []metav1.Condition `json:"condition,omitempty"`
 
 	// +optional
-	AvailableMachines AvailableMachineCondition `json:"availableMachines,omitempty"`
+	AvailableMachines []AvailableMachineCondition `json:"availableMachines,omitempty"`
 }
 
 type AvailableMachineCondition struct {
+
+	// +optional
 	Name string `json:"name,omitempty"`
 
+	// +optional
 	Usage UsageCondition `json:"usage,omitempty"`
 }
 
 type UsageCondition struct {
 
+	// +optional
 	// +kubebuilder:validation:Minimum:=0
-	Maximum int `json:"maximum,omitempty"`
+	Maximum int32 `json:"maximum,omitempty"`
 
+	// +optional
 	// +kubebuilder:validation:Minimum:=0
-	Used int `json:"used,omitempty"`
+	Ready int32 `json:"ready,omitempty"`
+
+	// +optional
+	// +kubebuilder:validation:Minimum:=0
+	Used int32 `json:"used,omitempty"`
 }
 
 //+kubebuilder:object:root=true

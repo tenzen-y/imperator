@@ -40,6 +40,7 @@ spec:
                 items:
                   properties:
                     available:
+                      format: int32
                       minimum: 0
                       type: integer
                     dependence:
@@ -70,6 +71,8 @@ spec:
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
                             type:
+                              description: ResourceName is the name identifying various
+                                resources in a ResourceList.
                               type: string
                           type: object
                         memory:
@@ -126,19 +129,27 @@ spec:
             description: MachineStatus defines the observed state of Machine
             properties:
               availableMachines:
-                properties:
-                  name:
-                    type: string
-                  usage:
-                    properties:
-                      maximum:
-                        minimum: 0
-                        type: integer
-                      used:
-                        minimum: 0
-                        type: integer
-                    type: object
-                type: object
+                items:
+                  properties:
+                    name:
+                      type: string
+                    usage:
+                      properties:
+                        maximum:
+                          format: int32
+                          minimum: 0
+                          type: integer
+                        ready:
+                          format: int32
+                          minimum: 0
+                          type: integer
+                        used:
+                          format: int32
+                          minimum: 0
+                          type: integer
+                      type: object
+                  type: object
+                type: array
               condition:
                 items:
                   description: "Condition contains details for one aspect of the current
