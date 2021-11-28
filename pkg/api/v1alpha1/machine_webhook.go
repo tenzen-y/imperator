@@ -6,6 +6,7 @@ import (
 	"github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -35,6 +36,18 @@ var _ webhook.Defaulter = &Machine{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Machine) Default() {
 	machinelog.Info("default", "name", r.Name)
+
+	for _, pool := range r.Spec.NodePool {
+		// input default assignmentType
+		if pool.AssignmentType == "" {
+			pool.AssignmentType = AssignmentTypeLabel
+		}
+		// input default scheduleChildren
+		if pool.MachineType.ScheduleChildren == nil {
+			pool.MachineType.ScheduleChildren = pointer.Bool(false)
+		}
+	}
+
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -70,7 +83,13 @@ func (r *Machine) ValidateAllOperation() error {
 	if err := r.ValidateLabel(); err != nil {
 		return err
 	}
+	if err := r.ValidateAssignmentType(); err != nil {
+		return err
+	}
 	if err := r.ValidateNodeName(); err != nil {
+		return err
+	}
+	if err := r.ValidateNodePoolMachineTypeName(); err != nil {
 		return err
 	}
 	if err := r.ValidateGPUSpec(); err != nil {
@@ -78,6 +97,15 @@ func (r *Machine) ValidateAllOperation() error {
 	}
 	if err := r.ValidateDependence(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (r *Machine) ValidateAssignmentType() error {
+	for _, pool := range r.Spec.NodePool {
+		if pool.AssignmentType != "" && pool.AssignmentType != AssignmentTypeLabel && pool.AssignmentType != AssignmentTypeTaint {
+			return fmt.Errorf("assignmentType is must be set `label` or `taint`")
+		}
 	}
 	return nil
 }
@@ -105,16 +133,36 @@ func (r *Machine) ValidateNodeName() error {
 		}
 	}
 
-	// Validate machineTypes.name
-	nodePoolNodes := map[string]bool{}
-	for _, n := range r.Spec.NodePool {
-		nodePoolNodes[n.Name] = true
+	return nil
+}
+
+func (r *Machine) ValidateNodePoolMachineTypeName() error {
+
+	machineTypeMap := map[string]MachineType{}
+	for _, m := range r.Spec.MachineTypes {
+		machineTypeMap[m.Name] = m
 	}
-	for _, n := range r.Spec.MachineTypes {
-		if !nodePoolNodes[n.Name] {
-			return fmt.Errorf("failed to find machineType name; %s in nodePool", n.Name)
+
+	for _, p := range r.Spec.NodePool {
+		if _, exist := machineTypeMap[p.MachineType.Name]; !exist {
+			return fmt.Errorf("%s was not found in spec.machineTypes", p.MachineType.Name)
 		}
 
+		if *p.MachineType.ScheduleChildren {
+			childrenNum := 0
+			for _, m := range machineTypeMap {
+				if m.Dependence == nil {
+					continue
+				}
+				if m.Dependence.Parent != p.MachineType.Name {
+					continue
+				}
+				childrenNum++
+			}
+			if childrenNum == 0 {
+				return fmt.Errorf("machineType, %s does not have children machineTypes, please set false in machineType.scheduleChildren", p.MachineType.Name)
+			}
+		}
 	}
 
 	return nil

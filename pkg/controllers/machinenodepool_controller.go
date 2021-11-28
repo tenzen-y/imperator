@@ -5,6 +5,7 @@ import (
 	"fmt"
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
+	"github.com/tenzen-y/imperator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -24,6 +25,46 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
+
+func getScheduleMachineTypeKey(poolSpec imperatorv1alpha1.MachineNodePoolSpec, nodeName string) []string {
+	var scheduleMachineTypeKey []string
+	for _, p := range poolSpec.NodePool {
+		if p.Name != nodeName {
+			continue
+		}
+		// Set parent machineType
+		scheduleMachineTypeKey = []string{utils.GetMachineTypeLabelTaintKey(p.MachineType.Name)}
+
+		// Set children machineType
+		if *p.MachineType.ScheduleChildren {
+			children := getChildrenMachineType(poolSpec.MachineTypeStock, p.MachineType.Name)
+			if children == nil {
+				break
+			}
+			for _, child := range children {
+				scheduleMachineTypeKey = append(scheduleMachineTypeKey, utils.GetMachineTypeLabelTaintKey(child))
+			}
+		}
+	}
+	return scheduleMachineTypeKey
+}
+
+func getChildrenMachineType(machineTypeStock []imperatorv1alpha1.NodePoolMachineTypeStock, parent string) []string {
+	var children []string
+	for _, ms := range machineTypeStock {
+		if ms.Parent == nil {
+			continue
+		}
+		if *ms.Parent == parent {
+			if children == nil {
+				children = []string{ms.Name}
+			} else {
+				children = append(children, ms.Name)
+			}
+		}
+	}
+	return children
+}
 
 // MachineNodePoolReconciler reconciles a MachineNodePool object
 type MachineNodePoolReconciler struct {
@@ -61,7 +102,7 @@ func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, pool *imperat
 	logger := log.FromContext(ctx)
 
 	if pool.ObjectMeta.DeletionTimestamp.IsZero() {
-		if ! controllerutil.ContainsFinalizer(pool, consts.MachineNodePoolFinalizer) {
+		if !controllerutil.ContainsFinalizer(pool, consts.MachineNodePoolFinalizer) {
 			controllerutil.AddFinalizer(pool, consts.MachineNodePoolFinalizer)
 			if err := r.Update(ctx, pool); err != nil {
 				return ctrl.Result{}, err
@@ -144,7 +185,16 @@ func (r *MachineNodePoolReconciler) removeNodeLabel(ctx context.Context, pool *i
 	logger := log.FromContext(ctx)
 	newNode := node.DeepCopy()
 
+	// remove machine status from label
 	delete(newNode.Labels, consts.MachineStatusKey)
+
+	// remove machineType from label
+	scheduleMachineTypeKey := getScheduleMachineTypeKey(pool.Spec, node.Name)
+	for _, mtKey := range scheduleMachineTypeKey {
+		if newNode.Labels[mtKey] == pool.Spec.MachineGroupName {
+			delete(newNode.Labels, mtKey)
+		}
+	}
 
 	if reflect.DeepEqual(node.Labels, newNode.Labels) {
 		return nil
@@ -169,12 +219,29 @@ func (r *MachineNodePoolReconciler) removeNodeTaint(ctx context.Context, pool *i
 	}
 
 	// if taint has machine-status, remove it.
+	// remove machine status from taint
 	if _, exist := taints[consts.MachineStatusKey]; exist {
 		for index, t := range newNode.Spec.Taints {
 			if t.Key != consts.MachineStatusKey {
 				continue
 			}
 			newNode.Spec.Taints = append(newNode.Spec.Taints[:index], newNode.Spec.Taints[index+1:]...)
+		}
+	}
+
+	// remove machineType from taint
+	scheduleMachineTypeKey := getScheduleMachineTypeKey(pool.Spec, node.Name)
+	for _, mtKey := range scheduleMachineTypeKey {
+		if _, exist := taints[mtKey]; exist {
+			for index, t := range newNode.Spec.Taints {
+				if t.Key != mtKey {
+					continue
+				}
+				if t.Value != pool.Spec.MachineGroupName {
+					continue
+				}
+				newNode.Spec.Taints = append(newNode.Spec.Taints[:index], newNode.Spec.Taints[index+1:]...)
+			}
 		}
 	}
 
@@ -242,6 +309,12 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			newPoolMachineStatusValue = imperatorv1alpha1.NodeModeNotReady
 			break
 		}
+
+		scheduleMachineTypeKey := getScheduleMachineTypeKey(pool.Spec, p.Name)
+		if *p.MachineType.ScheduleChildren && len(scheduleMachineTypeKey) == 1 {
+			logger.Info(fmt.Sprintf("node, %s was set scheduleChildren=True, but missing children machineType", p.Name))
+		}
+
 		if p.Mode == imperatorv1alpha1.NodeModeMaintenance {
 			newPoolMachineStatusValue = imperatorv1alpha1.NodeModeMaintenance
 		}
@@ -251,7 +324,15 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			if newNode.Labels == nil {
 				newNode.Labels = map[string]string{}
 			}
+
+			// set machine status to label
 			newNode.Labels[consts.MachineStatusKey] = newPoolMachineStatusValue.Value()
+
+			// set machineType to label
+			for _, mtKey := range scheduleMachineTypeKey {
+				newNode.Labels[mtKey] = pool.Spec.MachineGroupName
+			}
+
 			if reflect.DeepEqual(node.Labels, newNode.Labels) {
 				continue
 			}
@@ -279,6 +360,30 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 						Value:     newPoolMachineStatusValue.Value(),
 						Effect:    corev1.TaintEffectNoSchedule,
 						TimeAdded: &now,
+					}
+				}
+			}
+
+			// set machineType to taint
+			for _, mtKey := range scheduleMachineTypeKey {
+				if _, exist := taints[mtKey]; !exist {
+					newNode.Spec.Taints = append(newNode.Spec.Taints, corev1.Taint{
+						Key:       mtKey,
+						Value:     pool.Spec.MachineGroupName,
+						Effect:    corev1.TaintEffectNoSchedule,
+						TimeAdded: &now,
+					})
+				} else {
+					for i, t := range newNode.Spec.Taints {
+						if t.Key != mtKey {
+							continue
+						}
+						newNode.Spec.Taints[i] = corev1.Taint{
+							Key:       mtKey,
+							Value:     pool.Spec.MachineGroupName,
+							Effect:    corev1.TaintEffectNoSchedule,
+							TimeAdded: &now,
+						}
 					}
 				}
 			}

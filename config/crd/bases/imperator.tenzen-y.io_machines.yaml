@@ -93,10 +93,18 @@ spec:
                 items:
                   properties:
                     assignmentType:
-                      enum:
-                      - label
-                      - taint
+                      description: default=label
                       type: string
+                    machineType:
+                      properties:
+                        name:
+                          type: string
+                        scheduleChildren:
+                          description: default=false
+                          type: boolean
+                      required:
+                      - name
+                      type: object
                     mode:
                       enum:
                       - ready
@@ -105,6 +113,7 @@ spec:
                     name:
                       type: string
                   required:
+                  - machineType
                   - mode
                   - name
                   type: object

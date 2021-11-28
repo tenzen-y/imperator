@@ -1,5 +1,5 @@
 # imperator v1alpha
-design doceumtn for imperator v1alpha1.
+design document for imperator v1alpha1.
 
 ## Goal
 Provide virtual resource group to applications.
@@ -10,6 +10,7 @@ Imperator は Kubernetes Operator Pattern の controller で，2 つの controll
 
 1. Machine Controller
     - Machine リソースで定義されたリソースで StatefulSet で reserved コンテナを作成する．
+    - StatefulSet の命名規則は，<Machine Group>-<Machine Type>
 
 2. MachineNodePool controller
 
@@ -56,23 +57,32 @@ spec:
     - name: michiru
       mode: ready
       assignmentType: taint # omitempty;default=label
+      machineType:
+        name: compute-xlarge
+        scheduleChildren: true # omitempty;default=false
     - name: utaha
       mode: maintenance
       assignmentType: label # omitempty;default=label
+      machineType:
+        name: compute-medium
+        scheduleChildren: false # omitempty;default=false
     - name: eriri
       mode: ready
       assignmentType: label # omitempty;default=label
+      machineType:
+        name: compute-medium
+        scheduleChildren: false # omitempty;default=false
   machineTypes:
-    - name: michiru
+    - name: compute-medium
       spec:
         cpu: 6000m
         memory: 48Gi
         gpu: #omitempty
           type: nvidia.com/gpu
-          num: 1 
+          num: 1
           generation: turing
       available: 4
-    - name: utaha
+    - name: compute-xlarge
       spec:
         cpu: 40000m
         memory: 128Gi
@@ -81,7 +91,7 @@ spec:
           num: 2
           generation: ampere
       available: 1
-    - name: eriri
+    - name: compute-large
       spec:
         cpu: 20000m
         memory: 64Gi
@@ -99,15 +109,15 @@ status:
       status: "True"
       type: Ready
   availableMachines:
-    - name: michiru
+    - name: compute-medium
       usage:
         maximum: 4
         used: 1
-    - name: utaha
+    - name: compute-xlarge
       usage:
         maximum: 1
         used: 0.5
-    - name: eriri
+    - name: compute-large
       usage:
         maximum: 2
         used: 1
@@ -131,13 +141,27 @@ spec:
   nodePool:
     - name: michiru
       mode: ready
-      assignmentType: taint
+      assignmentType: taint # omitempty;default=label
+      machineType:
+        name: compute-xlarge
+        scheduleChildren: true # omitempty;default=false
     - name: utaha
       mode: maintenance
-      assignmentType: label
+      assignmentType: label # omitempty;default=label
+      machineType:
+        name: compute-medium
+        scheduleChildren: false # omitempty;default=false
     - name: eriri
       mode: ready
-      assignmentType: label
+      assignmentType: label # omitempty;default=label
+      machineType:
+        name: compute-medium
+        scheduleChildren: false # omitempty;default=false
+  machineTypeStock:
+    - name: compute-xlarge
+    - name: compute-large
+      parent: compute-xlarge # omitempty;*string
+    - name: compute-medium
 status:
   condition:
     - lastTransitionTime: "2021-07-24T09:08:39Z"

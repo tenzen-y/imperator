@@ -6,8 +6,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
+	"github.com/tenzen-y/imperator/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,7 +22,7 @@ const (
 	readyTestNodeB       = "ready-node-b"
 	maintenanceTestNode  = "maintenance-node"
 	testMachineGroupName = "test-machines"
-	suiteTestTimeOut     = time.Second * 30
+	suiteTestTimeOut     = time.Second * 5
 )
 
 var testMachineNodePoolName = strings.Join([]string{testMachineGroupName, "node-pool"}, "-")
@@ -30,6 +32,14 @@ type testNode struct {
 	mode           v1alpha1.NodePoolMode
 	status         v1alpha1.MachineNodeCondition
 	assignmentType v1alpha1.NodePoolAssignmentType
+	// {parent, child...}
+	machineType      []string
+	scheduleChildren *bool
+}
+
+type testMachineType struct {
+	name              string
+	parentMachineType *string
 }
 
 func createNode(ctx context.Context, testNodes []testNode) {
@@ -57,14 +67,11 @@ func createNode(ctx context.Context, testNodes []testNode) {
 	}
 }
 
-func newTestMachineNodePool(testNodes []testNode) *v1alpha1.MachineNodePool {
+func newTestMachineNodePool(testNodes []testNode, testMachineTypes []testMachineType) *v1alpha1.MachineNodePool {
 	pool := &v1alpha1.MachineNodePool{}
 	pool.TypeMeta = metav1.TypeMeta{
-		Kind: "MachineNodePool",
-		APIVersion: strings.Join([]string{
-			v1alpha1.GroupVersion.Group,
-			v1alpha1.GroupVersion.Version,
-		}, "/"),
+		Kind:       "MachineNodePool",
+		APIVersion: v1alpha1.GetAPIVersion(),
 	}
 	pool.ObjectMeta = metav1.ObjectMeta{
 		Name: testMachineNodePoolName,
@@ -78,8 +85,19 @@ func newTestMachineNodePool(testNodes []testNode) *v1alpha1.MachineNodePool {
 			Name:           node.name,
 			Mode:           node.mode,
 			AssignmentType: node.assignmentType,
+			MachineType: v1alpha1.NodePoolMachineType{
+				Name:             node.machineType[0],
+				ScheduleChildren: node.scheduleChildren,
+			},
 		})
 	}
+	for _, mt := range testMachineTypes {
+		pool.Spec.MachineTypeStock = append(pool.Spec.MachineTypeStock, v1alpha1.NodePoolMachineTypeStock{
+			Name:   mt.name,
+			Parent: mt.parentMachineType,
+		})
+	}
+
 	return pool
 }
 
@@ -112,6 +130,9 @@ func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 		}
 		Expect(actual).To(HaveKeyWithValue(consts.MachineStatusKey, n.mode.Value()))
 		Expect(target.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineGroupName))
+		for _, mt := range n.machineType {
+			Expect(actual).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt), testMachineGroupName))
+		}
 	}
 }
 
@@ -136,7 +157,7 @@ func waitUpdateTestMachineNodePoolCondition(ctx context.Context, testNodes []tes
 	}
 }
 
-func updateTestMachineNodePoolNodePool(ctx context.Context, patch []testNode) {
+func updateTestMachineNodePoolNodeMode(ctx context.Context, patch []testNode) {
 	machineNodePool := &v1alpha1.MachineNodePool{}
 	Expect(k8sClient.Get(ctx, client.ObjectKey{Name: testMachineNodePoolName}, machineNodePool)).NotTo(HaveOccurred())
 
@@ -151,27 +172,72 @@ func updateTestMachineNodePoolNodePool(ctx context.Context, patch []testNode) {
 	Expect(k8sClient.Update(ctx, machineNodePool, &client.UpdateOptions{})).NotTo(HaveOccurred())
 }
 
+func updateTestMachineNodePoolMachineType(ctx context.Context, patch []testNode) {
+	machineNodePool := &v1alpha1.MachineNodePool{}
+	Expect(k8sClient.Get(ctx, client.ObjectKey{Name: testMachineNodePoolName}, machineNodePool)).NotTo(HaveOccurred())
+
+	testParams := map[string]testNode{}
+	for _, node := range patch {
+		testParams[node.name] = node
+	}
+	for _, pool := range machineNodePool.Spec.NodePool {
+		pool.MachineType.Name = testParams[pool.Name].machineType[0]
+		pool.MachineType.ScheduleChildren = testParams[pool.Name].scheduleChildren
+	}
+
+	Expect(k8sClient.Update(ctx, machineNodePool, &client.UpdateOptions{})).NotTo(HaveOccurred())
+}
+
 var _ = Describe("imperator reconciler", func() {
 	ctx := context.Background()
 	var stopFunc func()
+
+	testMachineTypes := []testMachineType{
+		{
+			name:              "compute-xlarge",
+			parentMachineType: nil,
+		},
+		{
+			name:              "compute-large",
+			parentMachineType: pointer.String("compute-xlarge"),
+		},
+		{
+			name:              "compute-xmedium",
+			parentMachineType: nil,
+		},
+		{
+			name:              "compute-medium",
+			parentMachineType: pointer.String("compute-xmedium"),
+		},
+		{
+			name:              "compute-xsmall",
+			parentMachineType: nil,
+		},
+	}
 	testNodes := []testNode{
 		{
-			name:           readyTestNodeA,
-			mode:           v1alpha1.NodeModeReady,
-			status:         v1alpha1.NodeHealthy,
-			assignmentType: v1alpha1.AssignmentTypeLabel,
+			name:             readyTestNodeA,
+			mode:             v1alpha1.NodeModeReady,
+			status:           v1alpha1.NodeHealthy,
+			assignmentType:   v1alpha1.AssignmentTypeLabel,
+			machineType:      []string{"compute-xlarge", "compute-large"},
+			scheduleChildren: pointer.Bool(true),
 		},
 		{
-			name:           readyTestNodeB,
-			mode:           v1alpha1.NodeModeReady,
-			status:         v1alpha1.NodeHealthy,
-			assignmentType: v1alpha1.AssignmentTypeTaint,
+			name:             readyTestNodeB,
+			mode:             v1alpha1.NodeModeReady,
+			status:           v1alpha1.NodeHealthy,
+			assignmentType:   v1alpha1.AssignmentTypeTaint,
+			machineType:      []string{"compute-xmedium"},
+			scheduleChildren: pointer.Bool(false),
 		},
 		{
-			name:           maintenanceTestNode,
-			mode:           v1alpha1.NodeModeMaintenance,
-			status:         v1alpha1.NodeMaintenance,
-			assignmentType: v1alpha1.AssignmentTypeLabel,
+			name:             maintenanceTestNode,
+			mode:             v1alpha1.NodeModeMaintenance,
+			status:           v1alpha1.NodeMaintenance,
+			assignmentType:   v1alpha1.AssignmentTypeLabel,
+			machineType:      []string{"compute-xsmall"},
+			scheduleChildren: pointer.Bool(false),
 		},
 	}
 
@@ -218,7 +284,7 @@ var _ = Describe("imperator reconciler", func() {
 
 	// create -> delete
 	It("Should set label or taint to all nodes, update MachineNodePool status", func() {
-		pool := newTestMachineNodePool(testNodes)
+		pool := newTestMachineNodePool(testNodes, testMachineTypes)
 		Expect(k8sClient.Create(ctx, pool, &client.CreateOptions{})).NotTo(HaveOccurred())
 		waitUpdateTestNode(ctx, testNodes)
 		waitUpdateTestMachineNodePoolCondition(ctx, testNodes)
@@ -256,8 +322,8 @@ var _ = Describe("imperator reconciler", func() {
 		}
 	})
 
-	It("change node status", func() {
-		pool := newTestMachineNodePool(testNodes)
+	It("Change node status", func() {
+		pool := newTestMachineNodePool(testNodes, testMachineTypes)
 		Expect(k8sClient.Create(ctx, pool, &client.CreateOptions{})).NotTo(HaveOccurred())
 		waitUpdateTestNode(ctx, testNodes)
 		waitUpdateTestMachineNodePoolCondition(ctx, testNodes)
@@ -371,8 +437,8 @@ var _ = Describe("imperator reconciler", func() {
 
 	})
 
-	It("change node mode in MachineNodePool", func() {
-		pool := newTestMachineNodePool(testNodes)
+	It("Change node mode in MachineNodePool", func() {
+		pool := newTestMachineNodePool(testNodes, testMachineTypes)
 		Expect(k8sClient.Create(ctx, pool, &client.CreateOptions{})).NotTo(HaveOccurred())
 		waitUpdateTestNode(ctx, testNodes)
 		waitUpdateTestMachineNodePoolCondition(ctx, testNodes)
@@ -389,7 +455,7 @@ var _ = Describe("imperator reconciler", func() {
 				node.status = v1alpha1.ConditionReady
 			}
 		}
-		updateTestMachineNodePoolNodePool(ctx, newTestNodes)
+		updateTestMachineNodePoolNodeMode(ctx, newTestNodes)
 
 		for _, node := range newTestNodes {
 			pool := &v1alpha1.MachineNodePool{}
@@ -420,8 +486,8 @@ var _ = Describe("imperator reconciler", func() {
 		}
 	})
 
-	It("change assignment type", func() {
-		pool := newTestMachineNodePool(testNodes)
+	It("Change assignment type in MachineNodePool", func() {
+		pool := newTestMachineNodePool(testNodes, testMachineTypes)
 		Expect(k8sClient.Create(ctx, pool, &client.CreateOptions{})).NotTo(HaveOccurred())
 		waitUpdateTestNode(ctx, testNodes)
 		waitUpdateTestMachineNodePoolCondition(ctx, testNodes)
@@ -437,10 +503,9 @@ var _ = Describe("imperator reconciler", func() {
 				n.assignmentType = v1alpha1.AssignmentTypeTaint
 			}
 		}
-		updateTestMachineNodePoolNodePool(ctx, newTestNodes)
+		updateTestMachineNodePoolNodeMode(ctx, newTestNodes)
 
 		for _, tn := range newTestNodes {
-
 			getNode := &corev1.Node{}
 			actual := map[string]string{}
 			Eventually(func() map[string]string {
@@ -451,7 +516,7 @@ var _ = Describe("imperator reconciler", func() {
 					delete(actual, "node.kubernetes.io/not-ready")
 				}
 				return actual
-			}, suiteTestTimeOut).Should(HaveLen(1))
+			}, suiteTestTimeOut).Should(HaveLen(1 + len(tn.machineType)))
 
 			Expect(actual).To(HaveKeyWithValue(consts.MachineStatusKey, tn.mode.Value()))
 			Expect(getNode.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineGroupName))
@@ -479,16 +544,62 @@ var _ = Describe("imperator reconciler", func() {
 		}
 	})
 
+	It("Change machineType in MachineNodePool", func() {
+		pool := newTestMachineNodePool(testNodes, testMachineTypes)
+		Expect(k8sClient.Create(ctx, pool, &client.CreateOptions{})).NotTo(HaveOccurred())
+		waitUpdateTestNode(ctx, testNodes)
+		waitUpdateTestMachineNodePoolCondition(ctx, testNodes)
+
+		newTestNodes := testNodes
+		for _, n := range newTestNodes {
+			switch n.name {
+			case readyTestNodeA:
+				n.machineType = []string{"compute-xmedium"}
+				n.scheduleChildren = pointer.Bool(false)
+			case readyTestNodeB:
+				n.machineType = []string{"compute-xsmall"}
+				n.scheduleChildren = pointer.Bool(false)
+			case maintenanceTestNode:
+				n.machineType = []string{"compute-xlarge", "compute-large"}
+				n.scheduleChildren = pointer.Bool(true)
+			}
+		}
+
+		updateTestMachineNodePoolMachineType(ctx, newTestNodes)
+
+		for _, tn := range newTestNodes {
+			getNode := &corev1.Node{}
+			actual := map[string]string{}
+			Eventually(func() map[string]string {
+				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: tn.name}, getNode))
+				actual = getNode.Labels
+				if tn.assignmentType == v1alpha1.AssignmentTypeTaint {
+					actual = extractKeyValueFromTaint(getNode.Spec.Taints)
+					delete(actual, "node.kubernetes.io/not-ready")
+				}
+				return actual
+			}, suiteTestTimeOut).Should(HaveLen(1 + len(tn.machineType)))
+
+			Expect(getNode.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineGroupName))
+			for _, mt := range tn.machineType {
+				Expect(actual).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt), testMachineGroupName))
+			}
+
+		}
+	})
+
 	It("Should not complete reconcile because controller try to register fake-node.", func() {
 		newTestNodes := testNodes
 		newTestNodes = append(newTestNodes, testNode{
-			name:           "fake-node",
-			mode:           v1alpha1.NodeModeReady,
-			status:         v1alpha1.NodeHealthy,
-			assignmentType: v1alpha1.AssignmentTypeTaint,
+			name:             "fake-node",
+			mode:             v1alpha1.NodeModeReady,
+			status:           v1alpha1.NodeHealthy,
+			machineType:      []string{"machine-medium"},
+			scheduleChildren: pointer.Bool(false),
+			assignmentType:   v1alpha1.AssignmentTypeTaint,
 		})
 
-		pool := newTestMachineNodePool(newTestNodes)
+		pool := newTestMachineNodePool(newTestNodes, testMachineTypes)
 		Expect(k8sClient.Create(ctx, pool, &client.CreateOptions{})).NotTo(HaveOccurred())
 
 		pool = &v1alpha1.MachineNodePool{}

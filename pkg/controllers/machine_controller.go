@@ -60,11 +60,11 @@ func (r *MachineReconciler) reconcile(ctx context.Context, machine *imperatorv1a
 		logger.Error(err, "unable to reconcile MachineNodePool", "name", machine.Name)
 		r.Recorder.Eventf(machine, corev1.EventTypeWarning, "Failed", "Machine, %s: failed to reconcile MachineNodePool: %s", machine.Name, err.Error())
 		meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
-			Type: imperatorv1alpha1.ConditionReady,
-			Status: metav1.ConditionFalse,
+			Type:               imperatorv1alpha1.ConditionReady,
+			Status:             metav1.ConditionFalse,
 			LastTransitionTime: metav1.Now(),
-			Reason: metav1.StatusFailure,
-			Message: err.Error(),
+			Reason:             metav1.StatusFailure,
+			Message:            err.Error(),
 		})
 		return ctrl.Result{Requeue: true}, err
 	}
@@ -72,11 +72,11 @@ func (r *MachineReconciler) reconcile(ctx context.Context, machine *imperatorv1a
 		logger.Error(err, "unable to reconcile StateFulSet", "name", machine.Name)
 		r.Recorder.Eventf(machine, corev1.EventTypeWarning, "Failed", "Machine, %s: failed to reconcile StatefulSet: %s", machine.Name, err.Error())
 		meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
-			Type: imperatorv1alpha1.ConditionReady,
-			Status: metav1.ConditionFalse,
+			Type:               imperatorv1alpha1.ConditionReady,
+			Status:             metav1.ConditionFalse,
 			LastTransitionTime: metav1.Now(),
-			Reason: metav1.StatusFailure,
-			Message: err.Error(),
+			Reason:             metav1.StatusFailure,
+			Message:            err.Error(),
 		})
 		return ctrl.Result{Requeue: true}, err
 	}
@@ -89,11 +89,8 @@ func (r *MachineReconciler) reconcileMachineNodePool(ctx context.Context, machin
 
 	pool := &imperatorv1alpha1.MachineNodePool{
 		TypeMeta: metav1.TypeMeta{
-			Kind: consts.KindMachine,
-			APIVersion: strings.Join([]string{
-				imperatorv1alpha1.GroupVersion.Group,
-				imperatorv1alpha1.GroupVersion.Version,
-			}, "/"),
+			Kind:       consts.KindMachine,
+			APIVersion: imperatorv1alpha1.GetAPIVersion(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: strings.Join([]string{
@@ -136,7 +133,7 @@ func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *i
 	return nil
 }
 
-func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperatorv1alpha1.Machine) (ctrl.Result ,error) {
+func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperatorv1alpha1.Machine) (ctrl.Result, error) {
 	//logger := log.FromContext(ctx)
 	return ctrl.Result{}, nil
 }

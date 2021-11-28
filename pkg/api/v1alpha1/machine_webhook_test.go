@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
@@ -20,8 +21,8 @@ const (
 func newFakeMachine() *Machine {
 	return &Machine{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: strings.Join([]string{GroupVersion.Group, GroupVersion.Version}, "/"),
-			Kind:       "Machine",
+			APIVersion: GetAPIVersion(),
+			Kind:       consts.KindMachine,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testMachineGroup,
@@ -32,19 +33,36 @@ func newFakeMachine() *Machine {
 		Spec: MachineSpec{
 			NodePool: []NodePool{
 				{
-					Name:           "test-parent-1",
+					Name:           "test-node1",
 					Mode:           NodeModeReady,
 					AssignmentType: AssignmentTypeLabel,
+					MachineType: NodePoolMachineType{
+						Name:             "test1-parent",
+						ScheduleChildren: pointer.Bool(true),
+					},
 				},
 				{
-					Name:           "test-child-2",
+					Name:           "test-node2",
 					Mode:           NodeModeMaintenance,
 					AssignmentType: AssignmentTypeTaint,
+					MachineType: NodePoolMachineType{
+						Name:             "test1-parent",
+						ScheduleChildren: pointer.Bool(false),
+					},
+				},
+				{
+					Name:           "test-node3",
+					Mode:           NodeModeReady,
+					AssignmentType: AssignmentTypeLabel,
+					MachineType: NodePoolMachineType{
+						Name:             "test1-child",
+						ScheduleChildren: pointer.Bool(false),
+					},
 				},
 			},
 			MachineTypes: []MachineType{
 				{
-					Name: "test-parent-1",
+					Name: "test1-parent",
 					Spec: MachineDetailSpec{
 						CPU:    resource.MustParse("4000m"),
 						Memory: resource.MustParse("24Gi"),
@@ -57,7 +75,7 @@ func newFakeMachine() *Machine {
 					Available: 2,
 				},
 				{
-					Name: "test-child-2",
+					Name: "test1-child",
 					Spec: MachineDetailSpec{
 						CPU:    resource.MustParse("2000m"),
 						Memory: resource.MustParse("12Gi"),
@@ -69,7 +87,7 @@ func newFakeMachine() *Machine {
 					},
 					Available: 2,
 					Dependence: &Dependence{
-						Parent:         "test-parent-1",
+						Parent:         "test1-parent",
 						AvailableRatio: "0.5",
 					},
 				},
@@ -80,36 +98,37 @@ func newFakeMachine() *Machine {
 
 func createNodes(ctx context.Context) {
 	testParent1 := &corev1.Node{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Node",
-			APIVersion: strings.Join([]string{corev1.SchemeGroupVersion.Group, corev1.SchemeGroupVersion.Version}, "/"),
-		},
+		TypeMeta: getNodeTypeMeta(),
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-parent-1",
+			Name: "test-node1",
 		},
 	}
 	testChild1 := &corev1.Node{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Node",
-			APIVersion: strings.Join([]string{corev1.SchemeGroupVersion.Group, corev1.SchemeGroupVersion.Version}, "/"),
-		},
+		TypeMeta: getNodeTypeMeta(),
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-child-1",
+			Name: "test-node2",
 		},
 	}
 	testChild2 := &corev1.Node{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Node",
-			APIVersion: strings.Join([]string{corev1.SchemeGroupVersion.Group, corev1.SchemeGroupVersion.Version}, "/"),
-		},
+		TypeMeta: getNodeTypeMeta(),
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-child-2",
+			Name: "test-node3",
 		},
 	}
 
 	Expect(k8sClient.Create(ctx, testParent1, &client.CreateOptions{})).NotTo(HaveOccurred())
 	Expect(k8sClient.Create(ctx, testChild1, &client.CreateOptions{})).NotTo(HaveOccurred())
 	Expect(k8sClient.Create(ctx, testChild2, &client.CreateOptions{})).NotTo(HaveOccurred())
+}
+
+func getNodeTypeMeta() metav1.TypeMeta {
+	return metav1.TypeMeta{
+		APIVersion: strings.Join([]string{
+			corev1.SchemeGroupVersion.Group,
+			corev1.SchemeGroupVersion.Version,
+		}, "/"),
+		Kind: "Node",
+	}
 }
 
 var _ = Describe("Machine Webhook", func() {
@@ -152,15 +171,6 @@ var _ = Describe("Machine Webhook", func() {
 				fakeMachine: func() *Machine {
 					fakeMachine := newFakeMachine()
 					fakeMachine.Spec.NodePool[0].Name = "non-exist"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Specified non exist node name to machineType",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[0].Name = "non-exist"
 					return fakeMachine
 				}(),
 				err: true,
