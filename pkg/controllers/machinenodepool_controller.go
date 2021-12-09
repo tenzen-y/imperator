@@ -3,17 +3,15 @@ package controllers
 import (
 	"context"
 	"fmt"
-	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
-	"github.com/tenzen-y/imperator/pkg/consts"
-	"github.com/tenzen-y/imperator/pkg/controllers/utils"
+	"os"
+
+	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"os"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,6 +22,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
+	"github.com/tenzen-y/imperator/pkg/consts"
+	"github.com/tenzen-y/imperator/pkg/controllers/utils"
 )
 
 func getScheduleMachineTypeKey(poolSpec imperatorv1alpha1.MachineNodePoolSpec, nodeName string) []string {
@@ -196,7 +198,7 @@ func (r *MachineNodePoolReconciler) removeNodeLabel(ctx context.Context, pool *i
 		}
 	}
 
-	if reflect.DeepEqual(node.Labels, newNode.Labels) {
+	if cmp.Equal(node.Labels, newNode.Labels) {
 		return nil
 	}
 
@@ -213,10 +215,7 @@ func (r *MachineNodePoolReconciler) removeNodeTaint(ctx context.Context, pool *i
 	logger := log.FromContext(ctx)
 
 	newNode := node.DeepCopy()
-	taints := map[string]corev1.Taint{}
-	for _, t := range newNode.Spec.Taints {
-		taints[t.Key] = t
-	}
+	taints := utils.ExtractKeyValueFromTaint(newNode.Spec.Taints)
 
 	// if taint has machine-status, remove it.
 	// remove machine status from taint
@@ -245,7 +244,7 @@ func (r *MachineNodePoolReconciler) removeNodeTaint(ctx context.Context, pool *i
 		}
 	}
 
-	if reflect.DeepEqual(node.Spec.Taints, newNode.Spec.Taints) {
+	if cmp.Equal(node.Spec.Taints, newNode.Spec.Taints) {
 		return nil
 	}
 
@@ -268,15 +267,13 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 		if err := r.Get(ctx, client.ObjectKey{Name: p.Name}, node); err != nil {
 			return err
 		}
-		switch p.AssignmentType {
-		case imperatorv1alpha1.AssignmentTypeLabel:
+		if *p.Taint {
 			if err := r.removeNodeTaint(ctx, pool, node); err != nil {
 				return err
 			}
-		case imperatorv1alpha1.AssignmentTypeTaint:
-			if err := r.removeNodeLabel(ctx, pool, node); err != nil {
-				return err
-			}
+		}
+		if err := r.removeNodeLabel(ctx, pool, node); err != nil {
+			return err
 		}
 
 		// initialize Node
@@ -292,11 +289,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 		}
 		newNode.Annotations[consts.MachineGroupKey] = pool.Spec.MachineGroupName
 
-		taints := map[string]corev1.Taint{}
-		for _, t := range newNode.Spec.Taints {
-			taints[t.Key] = t
-		}
-
+		taints := utils.ExtractKeyValueFromTaint(newNode.Spec.Taints)
 		newPoolMachineStatusValue := imperatorv1alpha1.NodeModeReady
 		// looking for down Node.
 		for _, t := range consts.CannotUseNodeTaints {
@@ -319,24 +312,18 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			newPoolMachineStatusValue = imperatorv1alpha1.NodeModeMaintenance
 		}
 
-		switch p.AssignmentType {
-		case imperatorv1alpha1.AssignmentTypeLabel:
-			if newNode.Labels == nil {
-				newNode.Labels = map[string]string{}
-			}
+		// Set Label to Node
+		if newNode.Labels == nil {
+			newNode.Labels = map[string]string{}
+		}
+		// set machine status to label
+		newNode.Labels[consts.MachineStatusKey] = newPoolMachineStatusValue.Value()
+		// set machineType to label
+		for _, mtKey := range scheduleMachineTypeKey {
+			newNode.Labels[mtKey] = pool.Spec.MachineGroupName
+		}
 
-			// set machine status to label
-			newNode.Labels[consts.MachineStatusKey] = newPoolMachineStatusValue.Value()
-
-			// set machineType to label
-			for _, mtKey := range scheduleMachineTypeKey {
-				newNode.Labels[mtKey] = pool.Spec.MachineGroupName
-			}
-
-			if reflect.DeepEqual(node.Labels, newNode.Labels) {
-				continue
-			}
-		case imperatorv1alpha1.AssignmentTypeTaint:
+		if *p.Taint {
 			if newNode.Spec.Taints == nil {
 				newNode.Spec.Taints = []corev1.Taint{}
 			}
@@ -351,11 +338,8 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 					TimeAdded: &now,
 				})
 			} else {
-				for i, t := range newNode.Spec.Taints {
-					if t.Key != consts.MachineStatusKey {
-						continue
-					}
-					newNode.Spec.Taints[i] = corev1.Taint{
+				if idx := utils.GetTaintKeyIndex(newNode.Spec.Taints, consts.MachineStatusKey); idx != nil {
+					newNode.Spec.Taints[*idx] = corev1.Taint{
 						Key:       consts.MachineStatusKey,
 						Value:     newPoolMachineStatusValue.Value(),
 						Effect:    corev1.TaintEffectNoSchedule,
@@ -374,11 +358,8 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 						TimeAdded: &now,
 					})
 				} else {
-					for i, t := range newNode.Spec.Taints {
-						if t.Key != mtKey {
-							continue
-						}
-						newNode.Spec.Taints[i] = corev1.Taint{
+					if idx := utils.GetTaintKeyIndex(newNode.Spec.Taints, mtKey); idx != nil {
+						newNode.Spec.Taints[*idx] = corev1.Taint{
 							Key:       mtKey,
 							Value:     pool.Spec.MachineGroupName,
 							Effect:    corev1.TaintEffectNoSchedule,
@@ -387,17 +368,17 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 					}
 				}
 			}
+		}
 
-			if reflect.DeepEqual(node.Spec.Taints, newNode.Spec.Taints) {
-				continue
-			}
+		if cmp.Equal(node.Spec.Taints, newNode.Spec.Taints) && cmp.Equal(node.Labels, newNode.Labels) {
+			continue
 		}
 
 		if err := r.Update(ctx, newNode, &client.UpdateOptions{}); err != nil {
-			logger.Error(err, fmt.Sprintf("unable to set %s to %s", p.AssignmentType, p.Name), "name", pool.Name)
+			logger.Error(err, fmt.Sprintf("unable to set node mode to %s", p.Name), "name", pool.Name)
 			return err
 		}
-		r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "%s, %s: update node; add %s to %s", consts.KindMachineNodePool, pool.Name, p.AssignmentType, p.Name)
+		r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "%s, %s: update node; add Label or Taint to %s", consts.KindMachineNodePool, pool.Name, p.Name)
 	}
 	logger.Info("reconcile Node successfully", "name", pool.Name)
 	return nil
@@ -412,7 +393,7 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 		}
 
 		nodeLabelCondition := node.Labels[consts.MachineStatusKey]
-		if p.AssignmentType == imperatorv1alpha1.AssignmentTypeTaint {
+		if *p.Taint {
 			for _, t := range node.Spec.Taints {
 				if t.Key != consts.MachineStatusKey {
 					continue
@@ -436,7 +417,7 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 		})
 	}
 
-	if !reflect.DeepEqual(pool.Status.NodePoolCondition, nodeConditions) {
+	if !cmp.Equal(pool.Status.NodePoolCondition, nodeConditions) {
 		r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "%s, %s: updated MachineNodePool condition", consts.KindMachineNodePool, pool.Name)
 		pool.Status.NodePoolCondition = nodeConditions
 		meta.SetStatusCondition(&pool.Status.Conditions, metav1.Condition{
@@ -465,19 +446,19 @@ func (r *MachineNodePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		UpdateFunc: func(event event.UpdateEvent) bool {
 			newLabels := event.ObjectNew.(*corev1.Node).Labels
 			oldLabels := event.ObjectOld.(*corev1.Node).Labels
-			if !reflect.DeepEqual(newLabels, oldLabels) {
+			if !cmp.Equal(newLabels, oldLabels) {
 				return true
 			}
 
 			newAnnotations := event.ObjectNew.(*corev1.Node).Annotations
 			oldAnnotations := event.ObjectOld.(*corev1.Node).Annotations
-			if !reflect.DeepEqual(newAnnotations, oldAnnotations) {
+			if !cmp.Equal(newAnnotations, oldAnnotations) {
 				return true
 			}
 
 			newTaints := event.ObjectNew.(*corev1.Node).Spec.Taints
 			oldTaints := event.ObjectOld.(*corev1.Node).Spec.Taints
-			return !reflect.DeepEqual(newTaints, oldTaints)
+			return !cmp.Equal(newTaints, oldTaints)
 		},
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
 			return false

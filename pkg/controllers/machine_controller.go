@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -311,7 +310,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		statusMT.Usage.Maximum = desiredMachineTypeNum[statusMT.Name]
 	}
 
-	if !reflect.DeepEqual(machine.Status.AvailableMachines, originAvailableMachineStatus) {
+	if !cmp.Equal(machine.Status.AvailableMachines, originAvailableMachineStatus) {
 		r.Recorder.Eventf(machine, corev1.EventTypeNormal, "Updated", consts.KindMachine, machine.Name)
 		meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
 			Type:               imperatorv1alpha1.ConditionReady,

@@ -95,9 +95,6 @@ spec:
                 description: NodePool is node list that machineGroup is managing.
                 items:
                   properties:
-                    assignmentType:
-                      description: default=label
-                      type: string
                     machineType:
                       properties:
                         name:
@@ -115,6 +112,9 @@ spec:
                       type: string
                     name:
                       type: string
+                    taint:
+                      description: default=false
+                      type: boolean
                   required:
                   - machineType
                   - mode

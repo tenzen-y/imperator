@@ -32,27 +32,27 @@ func newFakeMachine() *Machine {
 		Spec: MachineSpec{
 			NodePool: []NodePool{
 				{
-					Name:           "test-node1",
-					Mode:           NodeModeReady,
-					AssignmentType: AssignmentTypeLabel,
+					Name:  "test-node1",
+					Mode:  NodeModeReady,
+					Taint: pointer.Bool(false),
 					MachineType: NodePoolMachineType{
 						Name:             "test1-parent",
 						ScheduleChildren: pointer.Bool(true),
 					},
 				},
 				{
-					Name:           "test-node2",
-					Mode:           NodeModeMaintenance,
-					AssignmentType: AssignmentTypeTaint,
+					Name:  "test-node2",
+					Mode:  NodeModeMaintenance,
+					Taint: pointer.Bool(false),
 					MachineType: NodePoolMachineType{
 						Name:             "test1-parent",
 						ScheduleChildren: pointer.Bool(false),
 					},
 				},
 				{
-					Name:           "test-node3",
-					Mode:           NodeModeReady,
-					AssignmentType: AssignmentTypeLabel,
+					Name:  "test-node3",
+					Mode:  NodeModeReady,
+					Taint: pointer.Bool(true),
 					MachineType: NodePoolMachineType{
 						Name:             "test1-child",
 						ScheduleChildren: pointer.Bool(false),
@@ -181,6 +181,15 @@ var _ = Describe("Machine Webhook", func() {
 					return fakeMachine
 				}(),
 				err: true,
+			},
+			{
+				description: "Taint field is nil",
+				fakeMachine: func() *Machine {
+					fakeMachine := newFakeMachine()
+					fakeMachine.Spec.NodePool[0].Taint = nil
+					return fakeMachine
+				}(),
+				err: false,
 			},
 			{
 				description: "Type of GPU must be set value",

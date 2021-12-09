@@ -30,8 +30,8 @@ type NodePool struct {
 	Mode NodePoolMode `json:"mode"`
 
 	// +optional
-	// default=label
-	AssignmentType NodePoolAssignmentType `json:"assignmentType,omitempty"`
+	// default=false
+	Taint *bool `json:"taint,omitempty"`
 
 	// +kubebuilder:validation:Required
 	MachineType NodePoolMachineType `json:"machineType"`
@@ -58,13 +58,6 @@ const (
 func (mode NodePoolMode) Value() string {
 	return string(mode)
 }
-
-type NodePoolAssignmentType string
-
-const (
-	AssignmentTypeLabel NodePoolAssignmentType = "label"
-	AssignmentTypeTaint NodePoolAssignmentType = "taint"
-)
 
 type NodePoolMachineTypeStock struct {
 

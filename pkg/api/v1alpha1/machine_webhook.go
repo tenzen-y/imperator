@@ -40,8 +40,8 @@ func (r *Machine) Default() {
 
 	for _, pool := range r.Spec.NodePool {
 		// input default assignmentType
-		if pool.AssignmentType == "" {
-			pool.AssignmentType = AssignmentTypeLabel
+		if pool.Taint == nil {
+			pool.Taint = pointer.Bool(false)
 		}
 		// input default scheduleChildren
 		if pool.MachineType.ScheduleChildren == nil {
@@ -84,9 +84,6 @@ func (r *Machine) ValidateAllOperation() error {
 	if err := r.ValidateLabel(); err != nil {
 		return err
 	}
-	if err := r.ValidateAssignmentType(); err != nil {
-		return err
-	}
 	if err := r.ValidateNodeName(); err != nil {
 		return err
 	}
@@ -98,15 +95,6 @@ func (r *Machine) ValidateAllOperation() error {
 	}
 	if err := r.ValidateDependence(); err != nil {
 		return err
-	}
-	return nil
-}
-
-func (r *Machine) ValidateAssignmentType() error {
-	for _, pool := range r.Spec.NodePool {
-		if pool.AssignmentType != "" && pool.AssignmentType != AssignmentTypeLabel && pool.AssignmentType != AssignmentTypeTaint {
-			return fmt.Errorf("assignmentType is must be set `label` or `taint`")
-		}
 	}
 	return nil
 }

@@ -19,10 +19,10 @@ const (
 )
 
 func newFakeMachine() *imperatorv1alpha1.Machine {
-	return &imperatorv1alpha1.Machine {
+	return &imperatorv1alpha1.Machine{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: imperatorv1alpha1.GroupVersion.String(),
-			Kind: consts.KindMachine,
+			Kind:       consts.KindMachine,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testMachineGroup,
@@ -31,13 +31,13 @@ func newFakeMachine() *imperatorv1alpha1.Machine {
 			},
 		},
 		Spec: imperatorv1alpha1.MachineSpec{
-			NodePool: []imperatorv1alpha1.NodePool {
+			NodePool: []imperatorv1alpha1.NodePool{
 				{
-					Name: "test-node1",
-					Mode: imperatorv1alpha1.NodeModeReady,
-					AssignmentType: imperatorv1alpha1.AssignmentTypeLabel,
+					Name:  "test-node1",
+					Mode:  imperatorv1alpha1.NodeModeReady,
+					Taint: pointer.Bool(false),
 					MachineType: imperatorv1alpha1.NodePoolMachineType{
-						Name: "test1-parent",
+						Name:             "test1-parent",
 						ScheduleChildren: pointer.Bool(true),
 					},
 				},
@@ -61,8 +61,8 @@ var _ = Describe("machine controller envtest", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect((&MachineReconciler{
-			Client: k8sClient,
-			Scheme: scheme,
+			Client:   k8sClient,
+			Scheme:   scheme,
 			Recorder: mgr.GetEventRecorderFor("imperator"),
 		}).SetupWithManager(mgr)).NotTo(HaveOccurred())
 
@@ -85,7 +85,7 @@ var _ = Describe("machine controller envtest", func() {
 	})
 
 	It("Should create StatefulSet", func() {
-		machine := newFakeMachine()
-		Expect(k8sClient.Create(ctx, machine, &client.CreateOptions{})).NotTo(HaveOccurred())
+		//machine := newFakeMachine()
+		//Expect(k8sClient.Create(ctx, machine, &client.CreateOptions{})).NotTo(HaveOccurred())
 	})
 })

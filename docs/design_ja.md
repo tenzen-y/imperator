@@ -207,19 +207,19 @@ spec:
   nodePool:
     - name: michiru
       mode: ready
-      assignmentType: taint # omitempty;default=label
+      taint: true # omitempty;default=false
       machineType:
         name: compute-xlarge
         scheduleChildren: true # omitempty;default=false
     - name: utaha
       mode: maintenance
-      assignmentType: label # omitempty;default=label
+      taint: false # omitempty;default=false
       machineType:
         name: compute-medium
         scheduleChildren: false # omitempty;default=false
     - name: eriri
       mode: ready
-      assignmentType: label # omitempty;default=label
+      taint: true # omitempty;default=false
       machineType:
         name: compute-medium
         scheduleChildren: false # omitempty;default=false
@@ -295,19 +295,19 @@ spec:
   nodePool:
     - name: michiru
       mode: ready
-      assignmentType: taint # omitempty;default=label
+      taint: true # omitempty;default=false
       machineType:
         name: compute-xlarge
         scheduleChildren: true # omitempty;default=false
     - name: utaha
       mode: maintenance
-      assignmentType: label # omitempty;default=label
+      taint: false # omitempty;default=false
       machineType:
         name: compute-medium
         scheduleChildren: false # omitempty;default=false
     - name: eriri
       mode: ready
-      assignmentType: label # omitempty;default=label
+      taint: true # omitempty;default=false
       machineType:
         name: compute-medium
         scheduleChildren: false # omitempty;default=false
