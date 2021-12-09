@@ -52,8 +52,6 @@ spec:
                   properties:
                     name:
                       type: string
-                    parent:
-                      type: string
                   required:
                   - name
                   type: object
@@ -63,15 +61,14 @@ spec:
                 items:
                   properties:
                     machineType:
-                      properties:
-                        name:
-                          type: string
-                        scheduleChildren:
-                          description: default=false
-                          type: boolean
-                      required:
-                      - name
-                      type: object
+                      items:
+                        properties:
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      type: array
                     mode:
                       enum:
                       - ready

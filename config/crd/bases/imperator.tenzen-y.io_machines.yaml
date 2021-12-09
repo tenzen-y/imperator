@@ -43,13 +43,6 @@ spec:
                       format: int32
                       minimum: 0
                       type: integer
-                    dependence:
-                      properties:
-                        availableRatio:
-                          type: string
-                        parent:
-                          type: string
-                      type: object
                     name:
                       type: string
                     spec:
@@ -96,15 +89,14 @@ spec:
                 items:
                   properties:
                     machineType:
-                      properties:
-                        name:
-                          type: string
-                        scheduleChildren:
-                          description: default=false
-                          type: boolean
-                      required:
-                      - name
-                      type: object
+                      items:
+                        properties:
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      type: array
                     mode:
                       enum:
                       - ready

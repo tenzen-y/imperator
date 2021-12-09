@@ -209,20 +209,17 @@ spec:
       mode: ready
       taint: true # omitempty;default=false
       machineType:
-        name: compute-xlarge
-        scheduleChildren: true # omitempty;default=false
+        - name: compute-xlarge # Support only a machineType in first release
     - name: utaha
       mode: maintenance
       taint: false # omitempty;default=false
       machineType:
-        name: compute-medium
-        scheduleChildren: false # omitempty;default=false
+        - name: compute-medium # Support only a machineType in first release
     - name: eriri
       mode: ready
       taint: true # omitempty;default=false
       machineType:
-        name: compute-medium
-        scheduleChildren: false # omitempty;default=false
+        - name: compute-medium # Support only a machineType in first release
   machineTypes:
     - name: compute-medium
       spec:
@@ -250,9 +247,6 @@ spec:
           type: nvidia.com/gpu
           num: 1
           generation: ampere
-      dependence: #omitempty
-        parent: vram-large1
-        availableRatio: 0.5
       available: 2
 status:
   condition:
@@ -297,24 +291,20 @@ spec:
       mode: ready
       taint: true # omitempty;default=false
       machineType:
-        name: compute-xlarge
-        scheduleChildren: true # omitempty;default=false
+        - name: compute-xlarge # Support only one machineType in first release
     - name: utaha
       mode: maintenance
       taint: false # omitempty;default=false
       machineType:
-        name: compute-medium
-        scheduleChildren: false # omitempty;default=false
+        - name: compute-medium # Support only a machineType in first release
     - name: eriri
       mode: ready
       taint: true # omitempty;default=false
       machineType:
-        name: compute-medium
-        scheduleChildren: false # omitempty;default=false
+        - name: compute-medium # Support only a machineType in first release
   machineTypeStock:
     - name: compute-xlarge
     - name: compute-large
-      parent: compute-xlarge # omitempty;*string
     - name: compute-medium
 status:
   condition:

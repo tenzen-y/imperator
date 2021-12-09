@@ -67,7 +67,7 @@ func (r *MachineReconciler) reconcile(ctx context.Context, machine *imperatorv1a
 
 	if err := r.reconcileMachineNodePool(ctx, machine); err != nil {
 		logger.Error(err, "unable to reconcile MachineNodePool", "name", machine.Name)
-		r.Recorder.Eventf(machine, corev1.EventTypeWarning, "Failed", "Machine, %s: failed to reconcile MachineNodePool: %s", machine.Name, err.Error())
+		r.Recorder.Eventf(machine, corev1.EventTypeWarning, "Failed", fmt.Sprintf("failed to reconcile; %v", err.Error()))
 		meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
 			Type:               imperatorv1alpha1.ConditionReady,
 			Status:             metav1.ConditionFalse,
@@ -79,7 +79,7 @@ func (r *MachineReconciler) reconcile(ctx context.Context, machine *imperatorv1a
 	}
 	if err := r.reconcileStatefulSet(ctx, machine); err != nil {
 		logger.Error(err, "unable to reconcile StateFulSet", "name", machine.Name)
-		r.Recorder.Eventf(machine, corev1.EventTypeWarning, "Failed", "Machine, %s: failed to reconcile StatefulSet: %s", machine.Name, err.Error())
+		r.Recorder.Eventf(machine, corev1.EventTypeWarning, "Failed", fmt.Sprintf("failed to reconcile StatefulSet; %v", err.Error()))
 		meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
 			Type:               imperatorv1alpha1.ConditionReady,
 			Status:             metav1.ConditionFalse,
@@ -92,7 +92,7 @@ func (r *MachineReconciler) reconcile(ctx context.Context, machine *imperatorv1a
 
 	if err := r.reconcileService(ctx, machine); err != nil {
 		logger.Error(err, "unable to reconcile Service", "name", machine.Name)
-		r.Recorder.Eventf(machine, corev1.EventTypeWarning, "Failed", "Machine, %s: failed to reconcile Service: %s", machine.Name, err.Error())
+		r.Recorder.Eventf(machine, corev1.EventTypeWarning, "Failed", fmt.Sprintf("failed to reconcile Service: %v", err.Error()))
 		meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
 			Type:               imperatorv1alpha1.ConditionReady,
 			Status:             metav1.ConditionFalse,
@@ -310,8 +310,8 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		statusMT.Usage.Maximum = desiredMachineTypeNum[statusMT.Name]
 	}
 
-	if !cmp.Equal(machine.Status.AvailableMachines, originAvailableMachineStatus) {
-		r.Recorder.Eventf(machine, corev1.EventTypeNormal, "Updated", consts.KindMachine, machine.Name)
+	if diff := cmp.Diff(originAvailableMachineStatus, machine.Status.AvailableMachines, consts.CmpSliceOpts...); diff != "" {
+		r.Recorder.Eventf(machine, corev1.EventTypeNormal, "Updated", "updated available machine status")
 		meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
 			Type:               imperatorv1alpha1.ConditionReady,
 			Status:             metav1.ConditionTrue,
@@ -322,7 +322,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		if err := r.Status().Update(ctx, machine, &client.UpdateOptions{}); err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
-		logger.Info(cmp.Diff(originAvailableMachineStatus, machine.Status.AvailableMachines))
+		logger.Info(diff, "Machine", machine.Name)
 	}
 
 	return ctrl.Result{}, nil

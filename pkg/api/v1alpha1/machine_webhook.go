@@ -12,7 +12,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"strconv"
 )
 
 // log is for logging in this package.
@@ -39,13 +38,9 @@ func (r *Machine) Default() {
 	machinelog.Info("default", "name", r.Name)
 
 	for _, pool := range r.Spec.NodePool {
-		// input default assignmentType
+		// Taint is false by default
 		if pool.Taint == nil {
 			pool.Taint = pointer.Bool(false)
-		}
-		// input default scheduleChildren
-		if pool.MachineType.ScheduleChildren == nil {
-			pool.MachineType.ScheduleChildren = pointer.Bool(false)
 		}
 	}
 
@@ -91,9 +86,6 @@ func (r *Machine) ValidateAllOperation() error {
 		return err
 	}
 	if err := r.ValidateGPUSpec(); err != nil {
-		return err
-	}
-	if err := r.ValidateDependence(); err != nil {
 		return err
 	}
 	return nil
@@ -150,23 +142,13 @@ func (r *Machine) ValidateNodePoolMachineTypeName() error {
 	}
 
 	for _, p := range r.Spec.NodePool {
-		if _, exist := machineTypeMap[p.MachineType.Name]; !exist {
-			return fmt.Errorf("%s was not found in spec.machineTypes", p.MachineType.Name)
+		if len(p.MachineType) != 1 {
+			// Support only one machineType in first release
+			return fmt.Errorf("%s; can not set multiple machineType in nodePool.machineType", p.Name)
 		}
-
-		if *p.MachineType.ScheduleChildren {
-			childrenNum := 0
-			for _, m := range machineTypeMap {
-				if m.Dependence == nil {
-					continue
-				}
-				if m.Dependence.Parent != p.MachineType.Name {
-					continue
-				}
-				childrenNum++
-			}
-			if childrenNum == 0 {
-				return fmt.Errorf("machineType, %s does not have children machineTypes, please set false in machineType.scheduleChildren", p.MachineType.Name)
+		for _, mt := range p.MachineType {
+			if _, exist := machineTypeMap[mt.Name]; !exist {
+				return fmt.Errorf("%s was not found in spec.machineTypes", mt.Name)
 			}
 		}
 	}
@@ -188,81 +170,6 @@ func (r *Machine) ValidateGPUSpec() error {
 		if m.Spec.GPU.Generation == "" {
 			return fmt.Errorf("gpu.generation must be set value")
 		}
-	}
-	return nil
-}
-
-func (r *Machine) ValidateDependence() error {
-	machineTypeNames := map[string]MachineDetailSpec{}
-	for _, mt := range r.Spec.MachineTypes {
-		machineTypeNames[mt.Name] = mt.Spec
-	}
-
-	for _, mt := range r.Spec.MachineTypes {
-		// skip validation if spec.dependence is empty
-		if mt.Dependence == nil {
-			continue
-		}
-
-		parent := mt.Dependence.Parent
-
-		if parent == "" {
-			return fmt.Errorf("dependence.parent must be set value")
-		}
-		if mt.Dependence.AvailableRatio == "" {
-			return fmt.Errorf("dependence.availableRatio must be set value")
-		}
-
-		// Validate dependency machine name
-		if _, exist := machineTypeNames[parent]; !exist {
-			return fmt.Errorf("failed to find machine type %s in spec.machineTypes", parent)
-		}
-
-		// Validate ratio
-		ratio, err := strconv.ParseFloat(mt.Dependence.AvailableRatio, 32)
-		if err != nil {
-			return fmt.Errorf("name: <%s>, value: <%s>; dependence.availableRatio must be set as type float", mt.Name, mt.Dependence.AvailableRatio)
-		}
-		if ratio > 1 {
-			return fmt.Errorf("name: <%s>, value: <%s>; dependence.availableRatio must not be set greater than 1(availableRatio <= 1)", mt.Name, mt.Dependence.AvailableRatio)
-		}
-
-		// Validate CPU
-		mustParseParentCPU := machineTypeNames[parent].CPU
-		parentCPU := float64(mustParseParentCPU.Value())
-		childCPU := float64(mt.Spec.CPU.Value())
-		if parentCPU*ratio != childCPU {
-			return fmt.Errorf("parent CPU: <%f>, child CPU <%f>; the ratio of number of cpus in child <%s> to the number of one in parent <%s> is wrong", parentCPU, childCPU, mt.Name, parent)
-		}
-
-		// Validate Memory
-		mustParseParentMemory := machineTypeNames[parent].Memory
-		parentMemory := float64(mustParseParentMemory.Value())
-		childMemory := float64(mt.Spec.Memory.Value())
-		if parentMemory*ratio != childMemory {
-			return fmt.Errorf("parent Memory: <%f>, child Memory <%f>; the ratio of memory capacities in child %s to the memory capacities in parent %s is wrong", parentMemory, childMemory, mt.Name, parent)
-		}
-
-		// Validate GPU
-		parentGPU := machineTypeNames[parent].GPU
-		childGPU := mt.Spec.GPU
-		if (childGPU != nil) != (parentGPU != nil) {
-			return fmt.Errorf("machine name: <%s>; child must be set GPU setting same as parent", mt.Name)
-		}
-		if mt.Spec.GPU != nil {
-			parentGPUNum := float64(parentGPU.Num.Value())
-			childGPUNum := float64(childGPU.Num.Value())
-			if parentGPUNum*ratio != childGPUNum {
-				return fmt.Errorf("the ratio of number of gpus in child; <%s> to the number of one in parent; <%s> is wrong", mt.Name, parent)
-			}
-			if parentGPU.Type != childGPU.Type {
-				return fmt.Errorf("gpu.type must be the same for parent; <%s> and child; <%s>", parent, mt.Name)
-			}
-			if parentGPU.Generation != childGPU.Generation {
-				return fmt.Errorf("gpu.generation must be the same for parent; <%s> and child; <%s>", parent, mt.Name)
-			}
-		}
-
 	}
 	return nil
 }

@@ -31,18 +31,6 @@ type MachineType struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum:=0
 	Available int32 `json:"available"`
-
-	// +optional
-	Dependence *Dependence `json:"dependence,omitempty"`
-}
-
-type Dependence struct {
-
-	// +optional
-	Parent string `json:"parent,omitempty"`
-
-	// +optional
-	AvailableRatio string `json:"availableRatio,omitempty"`
 }
 
 type MachineDetailSpec struct {

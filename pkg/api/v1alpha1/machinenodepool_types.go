@@ -34,17 +34,13 @@ type NodePool struct {
 	Taint *bool `json:"taint,omitempty"`
 
 	// +kubebuilder:validation:Required
-	MachineType NodePoolMachineType `json:"machineType"`
+	MachineType []NodePoolMachineType `json:"machineType"`
 }
 
 type NodePoolMachineType struct {
 
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
-
-	// +optional
-	// default=false
-	ScheduleChildren *bool `json:"scheduleChildren,omitempty"`
 }
 
 type NodePoolMode string
@@ -63,9 +59,6 @@ type NodePoolMachineTypeStock struct {
 
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
-
-	// +optional
-	Parent *string `json:"parent,omitempty"`
 }
 
 // MachineNodePoolStatus defines the observed state of MachineNodePool

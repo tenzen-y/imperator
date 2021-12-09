@@ -35,33 +35,30 @@ func newFakeMachine() *Machine {
 					Name:  "test-node1",
 					Mode:  NodeModeReady,
 					Taint: pointer.Bool(false),
-					MachineType: NodePoolMachineType{
-						Name:             "test1-parent",
-						ScheduleChildren: pointer.Bool(true),
-					},
+					MachineType: []NodePoolMachineType{{
+						Name: "test-machine1",
+					}},
 				},
 				{
 					Name:  "test-node2",
 					Mode:  NodeModeMaintenance,
 					Taint: pointer.Bool(false),
-					MachineType: NodePoolMachineType{
-						Name:             "test1-parent",
-						ScheduleChildren: pointer.Bool(false),
-					},
+					MachineType: []NodePoolMachineType{{
+						Name: "test-machine2",
+					}},
 				},
 				{
 					Name:  "test-node3",
 					Mode:  NodeModeReady,
 					Taint: pointer.Bool(true),
-					MachineType: NodePoolMachineType{
-						Name:             "test1-child",
-						ScheduleChildren: pointer.Bool(false),
-					},
+					MachineType: []NodePoolMachineType{{
+						Name: "test-machine1",
+					}},
 				},
 			},
 			MachineTypes: []MachineType{
 				{
-					Name: "test1-parent",
+					Name: "test-machine1",
 					Spec: MachineDetailSpec{
 						CPU:    resource.MustParse("4000m"),
 						Memory: resource.MustParse("24Gi"),
@@ -74,7 +71,7 @@ func newFakeMachine() *Machine {
 					Available: 2,
 				},
 				{
-					Name: "test1-child",
+					Name: "test-machine2",
 					Spec: MachineDetailSpec{
 						CPU:    resource.MustParse("2000m"),
 						Memory: resource.MustParse("12Gi"),
@@ -85,10 +82,6 @@ func newFakeMachine() *Machine {
 						},
 					},
 					Available: 2,
-					Dependence: &Dependence{
-						Parent:         "test1-parent",
-						AvailableRatio: "0.5",
-					},
 				},
 			},
 		},
@@ -214,105 +207,6 @@ var _ = Describe("Machine Webhook", func() {
 				fakeMachine: func() *Machine {
 					fakeMachine := newFakeMachine()
 					fakeMachine.Spec.MachineTypes[0].Spec.GPU.Generation = ""
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Missing parent machine",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.Parent = ""
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Missing available ratio for parent machine",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.AvailableRatio = ""
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Parent machine name is not exist.",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.Parent = "non-exist"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "AvailableRatio for parent machine must bet set as float",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.AvailableRatio = "foo-bar"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "AvailableRatio for parent machine must not be set greater than 1",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.AvailableRatio = "1.2"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch CPU resource size between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[0].Spec.CPU = resource.MustParse("500m")
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch Memory resource size between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Spec.Memory = resource.MustParse("128Gi")
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch GPU between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Spec.GPU = nil
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch GPU resource size between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[0].Spec.GPU.Num = resource.MustParse("10")
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch GPU type between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Spec.GPU.Type = "foo.bar"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch GPU generation between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Spec.GPU.Generation = "Foo"
 					return fakeMachine
 				}(),
 				err: true,

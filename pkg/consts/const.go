@@ -1,5 +1,10 @@
 package consts
 
+import (
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+)
+
 // label key
 const (
 	MachineGroupKey    = "imperator.tenzen-y.io/machine-group"
@@ -16,6 +21,7 @@ const (
 	// controller name
 	OwnerControllerField     = ".metadata.ownerReference.controller"
 	MachineNodePoolFinalizer = "imperator-machinenodepool-finalizer"
+	NodeNotReadyTaint        = "node.kubernetes.io/not-ready"
 )
 
 var (
@@ -26,4 +32,9 @@ var (
 		"node.kubernetes.io/unreachable",
 	}
 	ImperatorCoreNamespace = getEnvVarOrDefault("IMPERATOR_CORE_NAMESPACE", "imperator-system")
+	CmpSliceOpts           = []cmp.Option{
+		cmpopts.SortSlices(func(i, j int) bool {
+			return i < j
+		}),
+	}
 )

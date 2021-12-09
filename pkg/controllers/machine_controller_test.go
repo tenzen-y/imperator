@@ -36,10 +36,9 @@ func newFakeMachine() *imperatorv1alpha1.Machine {
 					Name:  "test-node1",
 					Mode:  imperatorv1alpha1.NodeModeReady,
 					Taint: pointer.Bool(false),
-					MachineType: imperatorv1alpha1.NodePoolMachineType{
-						Name:             "test1-parent",
-						ScheduleChildren: pointer.Bool(true),
-					},
+					MachineType: []imperatorv1alpha1.NodePoolMachineType{{
+						Name: "test1-parent",
+					}},
 				},
 			},
 		},
