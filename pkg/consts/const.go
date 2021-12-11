@@ -3,6 +3,8 @@ package consts
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	appsv1 "k8s.io/api/apps/v1"
+	"time"
 )
 
 // label key
@@ -22,6 +24,7 @@ const (
 	OwnerControllerField     = ".metadata.ownerReference.controller"
 	MachineNodePoolFinalizer = "imperator-machinenodepool-finalizer"
 	NodeNotReadyTaint        = "node.kubernetes.io/not-ready"
+	SuiteTestTimeOut         = time.Second * 5
 )
 
 var (
@@ -36,5 +39,10 @@ var (
 		cmpopts.SortSlices(func(i, j int) bool {
 			return i < j
 		}),
+	}
+	CmpStatefulSetOpts = []cmp.Option{
+		cmpopts.IgnoreFields(appsv1.StatefulSetSpec{},
+			"Selector", "Template"),
+		//"Selector", "Template", "ServiceName", "VolumeClaimTemplates", "PodManagementPolicy", "UpdateStrategy", "RevisionHistoryLimit"),
 	}
 )

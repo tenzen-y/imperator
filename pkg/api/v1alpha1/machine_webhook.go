@@ -138,13 +138,16 @@ func (r *Machine) ValidateNodePoolMachineTypeName() error {
 
 	machineTypeMap := map[string]MachineType{}
 	for _, m := range r.Spec.MachineTypes {
+		if _, exist := machineTypeMap[m.Name]; exist {
+			return fmt.Errorf("machineType name <%s> is duplicated", m.Name)
+		}
 		machineTypeMap[m.Name] = m
 	}
 
 	for _, p := range r.Spec.NodePool {
 		if len(p.MachineType) != 1 {
 			// Support only one machineType in first release
-			return fmt.Errorf("%s; can not set multiple machineType in nodePool.machineType", p.Name)
+			return fmt.Errorf("<%s>; can not set multiple machineType in nodePool.machineType", p.Name)
 		}
 		for _, mt := range p.MachineType {
 			if _, exist := machineTypeMap[mt.Name]; !exist {

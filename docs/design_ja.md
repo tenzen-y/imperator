@@ -36,7 +36,7 @@ machine の数量管理では，Pod リソースを監視する．
 apiVersion: v1
 kind: Service
 metadata:
-  name: compute-xlarge.general-machine # <Machine Type>.<Machine Group>
+  name: compute-xlarge-general-machine # <Machine Type>-<Machine Group>
   labels:
     imperator.tenzen-y.io/machine-group: general-machine
     imperator.tenzen-y.io/machine-type: compute-xlarge
@@ -51,7 +51,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: compute-xlarge.general-machine # <Machine Type>.<Machine Group>
+  name: compute-xlarge-general-machine # <Machine Type>-<Machine Group>
   labels:
     imperator.tenzen-y.io/machine-group: general-machine
     imperator.tenzen-y.io/machine-type: compute-xlarge
@@ -71,7 +71,6 @@ spec:
         imperator.tenzen-y.io/machine-type: compute-xlarge
         imperator.tenzen-y.io/pod-role: reservation
     spec:
-      terminationGracePeriodSeconds: 10
       tolerations:
         - key: imperator.tenzen-y.io/compute-xlarge
           effect: NoSchedule
@@ -131,7 +130,7 @@ spec:
       imperator.tenzen-y.io/machine-group: general-machine
       imperator.tenzen-y.io/machine-type: compute-xlarge
       imperator.tenzen-y.io/pod-role: guest
-  replicas: 1
+replicas: 1
   template:
     metadata:
       labels:
@@ -257,18 +256,21 @@ status:
     - name: compute-medium
       usage:
         maximum: 4
-        ready: 3
+        reservation: 3
         used: 1
+        waiting: 0
     - name: compute-xlarge
       usage:
         maximum: 1
-        ready: 1
-        used: 0.5
+        reservation: 1
+        used: 0
+        waiting: 0
     - name: compute-large
       usage:
         maximum: 2
-        ready: 2
+        reservation: 1
         used: 1
+        waiting: 1
 ```
 
 ### MachineNodePool リソース

@@ -88,35 +88,15 @@ func newFakeMachine() *Machine {
 	}
 }
 
-func createNodes(ctx context.Context) {
-	testParent1 := &corev1.Node{
-		TypeMeta: getNodeTypeMeta(),
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-node1",
+func newFakeNode(nodeName string) *corev1.Node {
+	return &corev1.Node{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Node",
 		},
-	}
-	testChild1 := &corev1.Node{
-		TypeMeta: getNodeTypeMeta(),
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-node2",
+			Name: nodeName,
 		},
-	}
-	testChild2 := &corev1.Node{
-		TypeMeta: getNodeTypeMeta(),
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-node3",
-		},
-	}
-
-	Expect(k8sClient.Create(ctx, testParent1, &client.CreateOptions{})).NotTo(HaveOccurred())
-	Expect(k8sClient.Create(ctx, testChild1, &client.CreateOptions{})).NotTo(HaveOccurred())
-	Expect(k8sClient.Create(ctx, testChild2, &client.CreateOptions{})).NotTo(HaveOccurred())
-}
-
-func getNodeTypeMeta() metav1.TypeMeta {
-	return metav1.TypeMeta{
-		APIVersion: corev1.SchemeGroupVersion.String(),
-		Kind:       "Node",
 	}
 }
 
@@ -126,7 +106,14 @@ var _ = Describe("Machine Webhook", func() {
 	BeforeEach(func() {
 		Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
 		Expect(k8sClient.DeleteAllOf(ctx, &corev1.Node{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
-		createNodes(ctx)
+		fakeNodes := []string{"test-node1", "test-node2", "test-node3"}
+		for _, name := range fakeNodes {
+			node := newFakeNode(name)
+			Expect(k8sClient.Create(ctx, node, &client.CreateOptions{})).NotTo(HaveOccurred())
+			Eventually(func() error {
+				return k8sClient.Get(ctx, client.ObjectKey{Name: name}, &corev1.Node{})
+			}, consts.SuiteTestTimeOut).Should(BeNil())
+		}
 	})
 
 	It("Create Machine resource successfully", func() {

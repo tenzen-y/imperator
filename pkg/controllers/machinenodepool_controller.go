@@ -87,7 +87,7 @@ func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, pool *imperat
 	}
 
 	if err := r.reconcileNode(ctx, pool); err != nil {
-		logger.Error(err, "unable to reconcile", "name", pool.Name)
+		logger.Error(err, "failed to reconcile", "name", pool.Name)
 		r.Recorder.Eventf(pool, corev1.EventTypeWarning, "Failed", fmt.Sprintf("failed to reconcile: %v", err.Error()))
 		meta.SetStatusCondition(&pool.Status.Conditions, metav1.Condition{
 			Type:               imperatorv1alpha1.ConditionReady,
@@ -220,7 +220,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			return err
 		}
 		newNode := originNode.DeepCopy()
-		newNode = r.removeNodeLabel(pool, originNode)
+		newNode = r.removeNodeLabel(pool, newNode)
 		if *p.Taint {
 			newNode = r.removeNodeTaint(pool, newNode)
 		}

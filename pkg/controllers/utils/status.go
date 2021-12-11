@@ -1,6 +1,9 @@
 package utils
 
-import imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
+import (
+	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+)
 
 func GetMachineTypeUsage(availableMachine []imperatorv1alpha1.AvailableMachineCondition, machineType string) *imperatorv1alpha1.UsageCondition {
 	for _, cond := range availableMachine {
@@ -10,4 +13,18 @@ func GetMachineTypeUsage(availableMachine []imperatorv1alpha1.AvailableMachineCo
 		return &cond.Usage
 	}
 	return nil
+}
+
+func GetPodConditionTypeMap(podConditions []corev1.PodCondition) map[corev1.PodConditionType]corev1.PodCondition {
+	result := make(map[corev1.PodConditionType]corev1.PodCondition)
+	if len(podConditions) == 0 {
+		return result
+	}
+	for _, c := range podConditions {
+		if _, exist := result[c.Type]; exist {
+			continue
+		}
+		result[c.Type] = c
+	}
+	return result
 }

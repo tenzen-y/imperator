@@ -131,11 +131,15 @@ spec:
                           format: int32
                           minimum: 0
                           type: integer
-                        ready:
+                        reservation:
                           format: int32
                           minimum: 0
                           type: integer
                         used:
+                          format: int32
+                          minimum: 0
+                          type: integer
+                        waiting:
                           format: int32
                           minimum: 0
                           type: integer

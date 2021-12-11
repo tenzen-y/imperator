@@ -84,11 +84,15 @@ type UsageCondition struct {
 
 	// +optional
 	// +kubebuilder:validation:Minimum:=0
-	Ready int32 `json:"ready,omitempty"`
+	Reservation int32 `json:"reservation,omitempty"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum:=0
 	Used int32 `json:"used,omitempty"`
+
+	// +optional
+	// +kubebuilder:validation:Minimum:=0
+	Waiting int32 `json:"waiting,omitempty"`
 }
 
 //+kubebuilder:object:root=true

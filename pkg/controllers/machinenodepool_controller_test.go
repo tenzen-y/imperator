@@ -20,14 +20,13 @@ import (
 )
 
 const (
-	readyTestNodeA       = "ready-node-a"
-	readyTestNodeB       = "ready-node-b"
-	maintenanceTestNode  = "maintenance-node"
-	testMachineGroupName = "test-machines"
-	suiteTestTimeOut     = time.Second * 3
+	readyTestNodeA                      = "ready-node-a"
+	readyTestNodeB                      = "ready-node-b"
+	maintenanceTestNode                 = "maintenance-node"
+	testMachineNodePoolMachineGroupName = "test-machinenodepool-machine-group"
 )
 
-var testMachineNodePoolName = strings.Join([]string{testMachineGroupName, "node-pool"}, "-")
+var testMachineNodePoolName = strings.Join([]string{testMachineNodePoolMachineGroupName, "node-pool"}, "-")
 
 type testNode struct {
 	name        string
@@ -37,27 +36,21 @@ type testNode struct {
 	machineType []imperatorv1alpha1.NodePoolMachineType
 }
 
-func createNode(ctx context.Context, testNodes []testNode) {
-
-	for _, n := range testNodes {
-		node := &corev1.Node{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: corev1.SchemeGroupVersion.String(),
-				Kind:       "Node",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: n.name,
-			},
-			Status: corev1.NodeStatus{
-				Conditions: []corev1.NodeCondition{{
-					Type:   corev1.NodeReady,
-					Status: corev1.ConditionTrue,
-				}},
-			},
-		}
-
-		Expect(k8sClient.Create(ctx, node)).NotTo(HaveOccurred())
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, &corev1.Node{})).NotTo(HaveOccurred())
+func newFakeNode(nodeName string) *corev1.Node {
+	return &corev1.Node{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Node",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: nodeName,
+		},
+		Status: corev1.NodeStatus{
+			Conditions: []corev1.NodeCondition{{
+				Type:   corev1.NodeReady,
+				Status: corev1.ConditionTrue,
+			}},
+		},
 	}
 }
 
@@ -70,10 +63,10 @@ func newFakeMachineNodePool(testNodes []testNode, testMachineTypeStock []imperat
 	pool.ObjectMeta = metav1.ObjectMeta{
 		Name: testMachineNodePoolName,
 		Labels: map[string]string{
-			consts.MachineGroupKey: testMachineGroupName,
+			consts.MachineGroupKey: testMachineNodePoolMachineGroupName,
 		},
 	}
-	pool.Spec.MachineGroupName = testMachineGroupName
+	pool.Spec.MachineGroupName = testMachineNodePoolMachineGroupName
 	for _, node := range testNodes {
 		pool.Spec.NodePool = append(pool.Spec.NodePool, imperatorv1alpha1.NodePool{
 			Name:        node.name,
@@ -95,7 +88,7 @@ func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 		Eventually(func() map[string]string {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, target)).NotTo(HaveOccurred())
 			return target.Labels
-		}, suiteTestTimeOut).ShouldNot(BeEmpty())
+		}, consts.SuiteTestTimeOut).ShouldNot(BeEmpty())
 
 		// check node taint
 		if *n.taint {
@@ -105,7 +98,7 @@ func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 				resultTaints := utils.ExtractKeyValueFromTaint(target.Spec.Taints)
 				delete(resultTaints, consts.NodeNotReadyTaint)
 				return resultTaints
-			}, suiteTestTimeOut).ShouldNot(BeEmpty())
+			}, consts.SuiteTestTimeOut).ShouldNot(BeEmpty())
 		}
 
 		nodeLabels := target.Labels
@@ -115,11 +108,11 @@ func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 			Expect(nodeTaints).To(HaveKeyWithValue(consts.MachineStatusKey, n.mode.Value()))
 		}
 		Expect(nodeLabels).To(HaveKeyWithValue(consts.MachineStatusKey, n.mode.Value()))
-		Expect(target.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineGroupName))
+		Expect(target.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineNodePoolMachineGroupName))
 		for _, mt := range n.machineType {
-			Expect(nodeLabels).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineGroupName))
+			Expect(nodeLabels).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
 			if *n.taint {
-				Expect(nodeTaints).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineGroupName))
+				Expect(nodeTaints).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
 			}
 		}
 	}
@@ -130,7 +123,7 @@ func waitUpdateTestMachineNodePoolCondition(ctx context.Context, testNodes []tes
 	Eventually(func() []imperatorv1alpha1.NodePoolCondition {
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: testMachineNodePoolName}, getPool)).NotTo(HaveOccurred())
 		return getPool.Status.NodePoolCondition
-	}, suiteTestTimeOut).Should(HaveLen(3))
+	}, consts.SuiteTestTimeOut).Should(HaveLen(3))
 
 	for _, n := range testNodes {
 		Eventually(func() imperatorv1alpha1.MachineNodeCondition {
@@ -142,7 +135,7 @@ func waitUpdateTestMachineNodePoolCondition(ctx context.Context, testNodes []tes
 				return pc.NodeCondition
 			}
 			return ""
-		}, suiteTestTimeOut).Should(Equal(n.status))
+		}, consts.SuiteTestTimeOut).Should(Equal(n.status))
 	}
 }
 
@@ -224,7 +217,15 @@ var _ = Describe("machinenodepool controller envtest", func() {
 		}
 		Expect(k8sClient.DeleteAllOf(ctx, &imperatorv1alpha1.MachineNodePool{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
 		Expect(k8sClient.DeleteAllOf(ctx, &corev1.Node{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
-		createNode(ctx, testNodes)
+
+		// create nodes
+		for _, n := range testNodes {
+			node := newFakeNode(n.name)
+			Expect(k8sClient.Create(ctx, node)).NotTo(HaveOccurred())
+			Eventually(func() error {
+				return k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, &corev1.Node{})
+			}, consts.SuiteTestTimeOut).Should(BeNil())
+		}
 
 		mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 			Scheme: scheme,
@@ -270,7 +271,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				return err
 			}
 			return nil
-		}, suiteTestTimeOut).ShouldNot(BeNil())
+		}, consts.SuiteTestTimeOut).ShouldNot(BeNil())
 
 		for _, n := range testNodes {
 
@@ -279,7 +280,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 			Eventually(func() map[string]string {
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, target)).NotTo(HaveOccurred())
 				return target.Labels
-			}, suiteTestTimeOut).Should(BeEmpty())
+			}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
 			// check taint
 			if *n.taint {
@@ -289,14 +290,14 @@ var _ = Describe("machinenodepool controller envtest", func() {
 					nodeTaints := utils.ExtractKeyValueFromTaint(target.Spec.Taints)
 					delete(nodeTaints, consts.NodeNotReadyTaint)
 					return nodeTaints
-				}, suiteTestTimeOut).Should(BeEmpty())
+				}, consts.SuiteTestTimeOut).Should(BeEmpty())
 			}
 
 			// check annotation
 			Eventually(func() string {
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, target)).NotTo(HaveOccurred())
 				return target.Annotations[consts.MachineGroupKey]
-			}, suiteTestTimeOut).Should(BeEmpty())
+			}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
 		}
 	})
@@ -319,7 +320,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 		})
 		Eventually(func() error {
 			return k8sClient.Update(ctx, getReadyTestNodeA, &client.UpdateOptions{})
-		}, suiteTestTimeOut).Should(BeNil())
+		}, consts.SuiteTestTimeOut).Should(BeNil())
 
 		getReadyTestNodeA = &corev1.Node{}
 		Eventually(func() corev1.TaintEffect {
@@ -331,13 +332,13 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				return t.Effect
 			}
 			return ""
-		}, suiteTestTimeOut).Should(Equal(corev1.TaintEffectNoSchedule))
+		}, consts.SuiteTestTimeOut).Should(Equal(corev1.TaintEffectNoSchedule))
 
 		getReadyTestNodeA = &corev1.Node{}
 		Eventually(func() string {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: readyTestNodeA}, getReadyTestNodeA)).NotTo(HaveOccurred())
 			return getReadyTestNodeA.Labels[consts.MachineStatusKey]
-		}, suiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
+		}, consts.SuiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
 
 		getPool := &imperatorv1alpha1.MachineNodePool{}
 		Eventually(func() imperatorv1alpha1.MachineNodeCondition {
@@ -349,7 +350,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				return c.NodeCondition
 			}
 			return ""
-		}, suiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeUnhealthy))
+		}, consts.SuiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeUnhealthy))
 
 		// "node.kubernetes.io/network-unavailable":NoSchedule
 		getReadyTestNodeB := &corev1.Node{}
@@ -373,21 +374,21 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				return t.Effect
 			}
 			return ""
-		}, suiteTestTimeOut).Should(Equal(corev1.TaintEffectNoSchedule))
+		}, consts.SuiteTestTimeOut).Should(Equal(corev1.TaintEffectNoSchedule))
 
 		// check node label
 		getReadyTestNodeB = &corev1.Node{}
 		Eventually(func() string {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: readyTestNodeB}, getReadyTestNodeB)).NotTo(HaveOccurred())
 			return getReadyTestNodeB.Labels[consts.MachineStatusKey]
-		}, suiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
+		}, consts.SuiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
 
 		// check node taint
 		getReadyTestNodeB = &corev1.Node{}
 		Eventually(func() string {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: readyTestNodeB}, getReadyTestNodeB)).NotTo(HaveOccurred())
 			return utils.ExtractKeyValueFromTaint(getReadyTestNodeB.Spec.Taints)[consts.MachineStatusKey]
-		}, suiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
+		}, consts.SuiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
 
 		getPool = &imperatorv1alpha1.MachineNodePool{}
 		Eventually(func() imperatorv1alpha1.MachineNodeCondition {
@@ -399,7 +400,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				return c.NodeCondition
 			}
 			return ""
-		}, suiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeUnhealthy))
+		}, consts.SuiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeUnhealthy))
 
 	})
 
@@ -436,19 +437,19 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				}
 				return ""
 
-			}, suiteTestTimeOut).Should(Equal(node.status))
+			}, consts.SuiteTestTimeOut).Should(Equal(node.status))
 
 			getNode := &corev1.Node{}
 			Eventually(func() string {
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: node.name}, getNode)).NotTo(HaveOccurred())
 				return getNode.Labels[consts.MachineStatusKey]
-			}, suiteTestTimeOut).Should(Equal(node.mode.Value()))
+			}, consts.SuiteTestTimeOut).Should(Equal(node.mode.Value()))
 
 			if *node.taint {
 				Eventually(func() string {
 					Expect(k8sClient.Get(ctx, client.ObjectKey{Name: node.name}, getNode)).NotTo(HaveOccurred())
 					return utils.ExtractKeyValueFromTaint(getNode.Spec.Taints)[consts.MachineStatusKey]
-				}, suiteTestTimeOut).Should(Equal(node.mode.Value()))
+				}, consts.SuiteTestTimeOut).Should(Equal(node.mode.Value()))
 			}
 
 		}
@@ -485,12 +486,12 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				actual = utils.ExtractKeyValueFromTaint(getNode.Spec.Taints)
 				delete(actual, consts.NodeNotReadyTaint)
 				return actual
-			}, suiteTestTimeOut).Should(HaveLen(expectedTaintNum))
+			}, consts.SuiteTestTimeOut).Should(HaveLen(expectedTaintNum))
 
 			if *tn.taint {
 				Expect(actual).To(HaveKeyWithValue(consts.MachineStatusKey, tn.mode.Value()))
 			}
-			Expect(getNode.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineGroupName))
+			Expect(getNode.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineNodePoolMachineGroupName))
 
 			getPool := &imperatorv1alpha1.MachineNodePool{}
 			Eventually(func() imperatorv1alpha1.MachineNodeCondition {
@@ -502,7 +503,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 					return s.NodeCondition
 				}
 				return ""
-			}, suiteTestTimeOut).Should(Equal(tn.status))
+			}, consts.SuiteTestTimeOut).Should(Equal(tn.status))
 
 		}
 	})
@@ -536,7 +537,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: tn.name}, getNode))
 				nodeLabels = getNode.Labels
 				return nodeLabels
-			}, suiteTestTimeOut).Should(HaveLen(expectedKeyNum))
+			}, consts.SuiteTestTimeOut).Should(HaveLen(expectedKeyNum))
 
 			if *tn.taint {
 				Eventually(func() map[string]string {
@@ -544,14 +545,14 @@ var _ = Describe("machinenodepool controller envtest", func() {
 					nodeTaints = utils.ExtractKeyValueFromTaint(getNode.Spec.Taints)
 					delete(nodeTaints, consts.NodeNotReadyTaint)
 					return nodeTaints
-				}, suiteTestTimeOut).Should(HaveLen(expectedKeyNum))
+				}, consts.SuiteTestTimeOut).Should(HaveLen(expectedKeyNum))
 			}
 
-			Expect(getNode.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineGroupName))
+			Expect(getNode.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineNodePoolMachineGroupName))
 			for _, mt := range tn.machineType {
-				Expect(nodeLabels).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineGroupName))
+				Expect(nodeLabels).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
 				if *tn.taint {
-					Expect(nodeTaints).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineGroupName))
+					Expect(nodeTaints).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
 				}
 			}
 		}
@@ -574,7 +575,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 		Eventually(func() string {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: testMachineNodePoolName}, pool)).NotTo(HaveOccurred())
 			return pool.Annotations[consts.MachineGroupKey]
-		}, suiteTestTimeOut).Should(Equal(pool.Spec.MachineGroupName))
+		}, consts.SuiteTestTimeOut).Should(Equal(pool.Spec.MachineGroupName))
 
 		getPool := &imperatorv1alpha1.MachineNodePool{}
 		Eventually(func() metav1.ConditionStatus {
@@ -586,6 +587,6 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				return s.Status
 			}
 			return ""
-		}, suiteTestTimeOut).Should(Equal(metav1.ConditionFalse))
+		}, consts.SuiteTestTimeOut).Should(Equal(metav1.ConditionFalse))
 	})
 })
