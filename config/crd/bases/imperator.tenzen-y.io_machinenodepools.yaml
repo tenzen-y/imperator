@@ -46,15 +46,29 @@ spec:
               machineGroupName:
                 description: MachineGroupName is node pool group
                 type: string
+              machineTypeStock:
+                description: MachineTypeStock is available machineType list.
+                items:
+                  properties:
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
               nodePool:
                 description: NodePool is node list that machineGroup is managing.
                 items:
                   properties:
-                    assignmentType:
-                      enum:
-                      - label
-                      - taint
-                      type: string
+                    machineType:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      type: array
                     mode:
                       enum:
                       - ready
@@ -62,13 +76,18 @@ spec:
                       type: string
                     name:
                       type: string
+                    taint:
+                      description: default=false
+                      type: boolean
                   required:
+                  - machineType
                   - mode
                   - name
                   type: object
                 type: array
             required:
             - machineGroupName
+            - machineTypeStock
             - nodePool
             type: object
           status:

@@ -14,6 +14,10 @@ type MachineNodePoolSpec struct {
 	// NodePool is node list that machineGroup is managing.
 	// +kubebuilder:validation:Required
 	NodePool []NodePool `json:"nodePool"`
+
+	// MachineTypeStock is available machineType list.
+	// +kubebuilder:validation:Required
+	MachineTypeStock []NodePoolMachineTypeStock `json:"machineTypeStock"`
 }
 
 type NodePool struct {
@@ -26,8 +30,17 @@ type NodePool struct {
 	Mode NodePoolMode `json:"mode"`
 
 	// +optional
-	// +kubebuilder:validation:Enum=label;taint
-	AssignmentType NodePoolAssignmentType `json:"assignmentType"`
+	// default=false
+	Taint *bool `json:"taint,omitempty"`
+
+	// +kubebuilder:validation:Required
+	MachineType []NodePoolMachineType `json:"machineType"`
+}
+
+type NodePoolMachineType struct {
+
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
 }
 
 type NodePoolMode string
@@ -42,12 +55,11 @@ func (mode NodePoolMode) Value() string {
 	return string(mode)
 }
 
-type NodePoolAssignmentType string
+type NodePoolMachineTypeStock struct {
 
-const (
-	AssignmentTypeLabel NodePoolAssignmentType = "label"
-	AssignmentTypeTaint NodePoolAssignmentType = "taint"
-)
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+}
 
 // MachineNodePoolStatus defines the observed state of MachineNodePool
 type MachineNodePoolStatus struct {

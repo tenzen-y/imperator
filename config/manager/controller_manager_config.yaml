@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: c402a1f6.tenzen-y.io
+  resourceName: c402a1f6.imperator.tenzen-y.io

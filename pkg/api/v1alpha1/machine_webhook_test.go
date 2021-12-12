@@ -2,14 +2,15 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 const (
@@ -19,8 +20,8 @@ const (
 func newFakeMachine() *Machine {
 	return &Machine{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: strings.Join([]string{GroupVersion.Group, GroupVersion.Version}, "/"),
-			Kind:       "Machine",
+			APIVersion: GroupVersion.String(),
+			Kind:       consts.KindMachine,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testMachineGroup,
@@ -31,19 +32,33 @@ func newFakeMachine() *Machine {
 		Spec: MachineSpec{
 			NodePool: []NodePool{
 				{
-					Name:           "test-parent-1",
-					Mode:           NodeModeReady,
-					AssignmentType: AssignmentTypeLabel,
+					Name:  "test-node1",
+					Mode:  NodeModeReady,
+					Taint: pointer.Bool(false),
+					MachineType: []NodePoolMachineType{{
+						Name: "test-machine1",
+					}},
 				},
 				{
-					Name:           "test-child-2",
-					Mode:           NodeModeMaintenance,
-					AssignmentType: AssignmentTypeTaint,
+					Name:  "test-node2",
+					Mode:  NodeModeMaintenance,
+					Taint: pointer.Bool(false),
+					MachineType: []NodePoolMachineType{{
+						Name: "test-machine2",
+					}},
+				},
+				{
+					Name:  "test-node3",
+					Mode:  NodeModeReady,
+					Taint: pointer.Bool(true),
+					MachineType: []NodePoolMachineType{{
+						Name: "test-machine1",
+					}},
 				},
 			},
 			MachineTypes: []MachineType{
 				{
-					Name: "test-parent-1",
+					Name: "test-machine1",
 					Spec: MachineDetailSpec{
 						CPU:    resource.MustParse("4000m"),
 						Memory: resource.MustParse("24Gi"),
@@ -56,7 +71,7 @@ func newFakeMachine() *Machine {
 					Available: 2,
 				},
 				{
-					Name: "test-child-2",
+					Name: "test-machine2",
 					Spec: MachineDetailSpec{
 						CPU:    resource.MustParse("2000m"),
 						Memory: resource.MustParse("12Gi"),
@@ -67,48 +82,22 @@ func newFakeMachine() *Machine {
 						},
 					},
 					Available: 2,
-					Dependence: &Dependence{
-						Parent:         "test-parent-1",
-						AvailableRatio: "0.5",
-					},
 				},
 			},
 		},
 	}
 }
 
-func createNodes(ctx context.Context) {
-	testParent1 := &corev1.Node{
+func newFakeNode(nodeName string) *corev1.Node {
+	return &corev1.Node{
 		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Node",
-			APIVersion: strings.Join([]string{corev1.SchemeGroupVersion.Group, corev1.SchemeGroupVersion.Version}, "/"),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-parent-1",
+			Name: nodeName,
 		},
 	}
-	testChild1 := &corev1.Node{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Node",
-			APIVersion: strings.Join([]string{corev1.SchemeGroupVersion.Group, corev1.SchemeGroupVersion.Version}, "/"),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-child-1",
-		},
-	}
-	testChild2 := &corev1.Node{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Node",
-			APIVersion: strings.Join([]string{corev1.SchemeGroupVersion.Group, corev1.SchemeGroupVersion.Version}, "/"),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-child-2",
-		},
-	}
-
-	Expect(k8sClient.Create(ctx, testParent1, &client.CreateOptions{})).NotTo(HaveOccurred())
-	Expect(k8sClient.Create(ctx, testChild1, &client.CreateOptions{})).NotTo(HaveOccurred())
-	Expect(k8sClient.Create(ctx, testChild2, &client.CreateOptions{})).NotTo(HaveOccurred())
 }
 
 var _ = Describe("Machine Webhook", func() {
@@ -117,7 +106,14 @@ var _ = Describe("Machine Webhook", func() {
 	BeforeEach(func() {
 		Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
 		Expect(k8sClient.DeleteAllOf(ctx, &corev1.Node{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
-		createNodes(ctx)
+		fakeNodes := []string{"test-node1", "test-node2", "test-node3"}
+		for _, name := range fakeNodes {
+			node := newFakeNode(name)
+			Expect(k8sClient.Create(ctx, node, &client.CreateOptions{})).NotTo(HaveOccurred())
+			Eventually(func() error {
+				return k8sClient.Get(ctx, client.ObjectKey{Name: name}, &corev1.Node{})
+			}, consts.SuiteTestTimeOut).Should(BeNil())
+		}
 	})
 
 	It("Create Machine resource successfully", func() {
@@ -128,14 +124,34 @@ var _ = Describe("Machine Webhook", func() {
 
 	It("Failed to create Machine resource", func() {
 		testCases := []struct {
-			description string
-			fakeMachine *Machine
-			err         bool
+			description   string
+			fakeMachine   *Machine
+			kubeResources []client.Object
+			err           bool
 		}{
 			{
 				description: "All items are valid",
 				fakeMachine: newFakeMachine(),
 				err:         false,
+			},
+			{
+				description: fmt.Sprintf("Missing key, %s in labels", consts.MachineGroupKey),
+				fakeMachine: func() *Machine {
+					fakeMachine := newFakeMachine()
+					delete(fakeMachine.Labels, consts.MachineGroupKey)
+					return fakeMachine
+				}(),
+				err: true,
+			},
+			{
+				description: "MachineGroup label is duplicated",
+				fakeMachine: newFakeMachine(),
+				kubeResources: func() []client.Object {
+					duplicatedMachineGroupMachine := newFakeMachine()
+					duplicatedMachineGroupMachine.Name = "duplicated-machine-group"
+					return []client.Object{duplicatedMachineGroupMachine}
+				}(),
+				err: true,
 			},
 			{
 				description: "Specified non exist node name to nodePool",
@@ -147,13 +163,13 @@ var _ = Describe("Machine Webhook", func() {
 				err: true,
 			},
 			{
-				description: "Specified non exist node name to machineType",
+				description: "Taint field is nil",
 				fakeMachine: func() *Machine {
 					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[0].Name = "non-exist"
+					fakeMachine.Spec.NodePool[0].Taint = nil
 					return fakeMachine
 				}(),
-				err: true,
+				err: false,
 			},
 			{
 				description: "Type of GPU must be set value",
@@ -182,108 +198,14 @@ var _ = Describe("Machine Webhook", func() {
 				}(),
 				err: true,
 			},
-			{
-				description: "Missing parent machine",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.Parent = ""
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Missing available ratio for parent machine",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.AvailableRatio = ""
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Parent machine name is not exist.",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.Parent = "non-exist"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "AvailableRatio for parent machine must bet set as float",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.AvailableRatio = "foo-bar"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "AvailableRatio for parent machine must not be set greater than 1",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Dependence.AvailableRatio = "1.2"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch CPU resource size between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[0].Spec.CPU = resource.MustParse("500m")
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch Memory resource size between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Spec.Memory = resource.MustParse("128Gi")
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch GPU between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Spec.GPU = nil
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch GPU resource size between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[0].Spec.GPU.Num = resource.MustParse("10")
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch GPU type between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Spec.GPU.Type = "foo.bar"
-					return fakeMachine
-				}(),
-				err: true,
-			},
-			{
-				description: "Unmatch GPU generation between parent and child",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[1].Spec.GPU.Generation = "Foo"
-					return fakeMachine
-				}(),
-				err: true,
-			},
 		}
 
 		for _, test := range testCases {
+			if len(test.kubeResources) > 0 {
+				for _, o := range test.kubeResources {
+					Expect(k8sClient.Create(ctx, o, &client.CreateOptions{})).NotTo(HaveOccurred(), test.description)
+				}
+			}
 			err := k8sClient.Create(ctx, test.fakeMachine, &client.CreateOptions{})
 			if test.err {
 				Expect(err).To(HaveOccurred(), test.description)
@@ -291,6 +213,11 @@ var _ = Describe("Machine Webhook", func() {
 				Expect(err).NotTo(HaveOccurred(), test.description)
 			}
 			Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred(), test.description)
+			if len(test.kubeResources) > 0 {
+				for _, o := range test.kubeResources {
+					Expect(k8sClient.DeleteAllOf(ctx, o, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred(), test.description)
+				}
+			}
 		}
 	})
 })

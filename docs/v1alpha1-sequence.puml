@@ -4,8 +4,9 @@
 participant "End User" as User order 1
 participant "K8s API\n Server" as APIServer order 2
 participant "Imperator Machine\n webhook" as MachineWebhook order 3
-participant "Imperator Machine\n controller" as MachineController order 6
-participant "Imperator MachineNodePool\n controller" as MachineNodePoolController order 8
+participant "Imperator Machine\n controller" as MachineController order 4
+participant "Imperator MachineNodePool\n controller" as MachineNodePoolController order 5
+participant "Mutating Pod\nWebhook" as PodWebhook order 6
 
 User -> APIServer: Create Machine CR
 activate User
@@ -45,6 +46,16 @@ loop
   end
   deactivate MachineNodePoolController
 end
+
+User -> APIServer: Create ML Pod
+activate User
+
+APIServer --> PodWebhook: New Pod
+activate PodWebhook
+PodWebhook ---> APIServer: Victim Dummy Pod & Create ML Pod
+deactivate PodWebhook
+APIServer -> User: result
+deactivate User
 
 deactivate APIServer
 

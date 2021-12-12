@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"context"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
+	"github.com/tenzen-y/imperator/pkg/consts"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -59,6 +62,13 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
+
+	// prepare namespace
+	for _, nsName := range []string{consts.ImperatorCoreNamespace, testGuestNs} {
+		ns := &corev1.Namespace{}
+		ns.Name = nsName
+		Expect(k8sClient.Create(context.Background(), ns, &client.CreateOptions{})).NotTo(HaveOccurred())
+	}
 
 }, 60)
 

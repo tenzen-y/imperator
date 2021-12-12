@@ -40,7 +40,7 @@ func (o *options) run() error {
 		Port:                   9443,
 		HealthProbeBindAddress: o.probeAddr,
 		LeaderElection:         o.enableLeaderElection,
-		LeaderElectionID:       "c402a1f6.tenzen-y.io",
+		LeaderElectionID:       "c402a1f6.imperator.tenzen-y.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start imperator")

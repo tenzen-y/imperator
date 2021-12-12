@@ -1,22 +1,30 @@
 package consts
 
+import (
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	appsv1 "k8s.io/api/apps/v1"
+	"time"
+)
+
 // label key
 const (
-	MachineGroupKey  = "imperator.io/machine-group"
-	MachineStatusKey = "imperator.io/node-pool"
-	MachineName      = "imperator.io/machine"
-	K8sAppNameKey    = "app.kubernetes.io/name"
-	K8sAppVersionKey = "app.kubernetes.io/version"
+	MachineGroupKey    = "imperator.tenzen-y.io/machine-group"
+	MachineStatusKey   = "imperator.tenzen-y.io/node-pool"
+	MachineTypeKey     = "imperator.tenzen-y.io/machine-type"
+	PodRoleKey         = "imperator.tenzen-y.io/pod-role"
+	StatefulSetImage   = "alpine:3.15.0"
+	NvidiaGPUFamilyKey = "nvidia.com/gpu.family"
 	// label value
-	K8sAppNameValue          = "imperator"
-	KindMachineNodePool      = "MachineNodePool"
-	KindMachine              = "Machine"
-	MachineStatusReady       = "ready"
-	MachineStatusNotReady    = "not-ready"
-	MachineStatusMaintenance = "maintenance"
+	KindMachineNodePool = "MachineNodePool"
+	KindMachine         = "Machine"
+	PodRoleReservation  = "reservation"
+	PodRoleGuest        = "guest"
 	// controller name
 	OwnerControllerField     = ".metadata.ownerReference.controller"
 	MachineNodePoolFinalizer = "imperator-machinenodepool-finalizer"
+	NodeNotReadyTaint        = "node.kubernetes.io/not-ready"
+	SuiteTestTimeOut         = time.Second * 5
 )
 
 var (
@@ -25,5 +33,16 @@ var (
 		"node.kubernetes.io/unschedulable",
 		"node.kubernetes.io/network-unavailable",
 		"node.kubernetes.io/unreachable",
+	}
+	ImperatorCoreNamespace = getEnvVarOrDefault("IMPERATOR_CORE_NAMESPACE", "imperator-system")
+	CmpSliceOpts           = []cmp.Option{
+		cmpopts.SortSlices(func(i, j int) bool {
+			return i < j
+		}),
+	}
+	CmpStatefulSetOpts = []cmp.Option{
+		cmpopts.IgnoreFields(appsv1.StatefulSetSpec{},
+			"Selector", "Template"),
+		//"Selector", "Template", "ServiceName", "VolumeClaimTemplates", "PodManagementPolicy", "UpdateStrategy", "RevisionHistoryLimit"),
 	}
 )
