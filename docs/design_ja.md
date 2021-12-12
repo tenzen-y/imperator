@@ -13,12 +13,18 @@ Imperator は Kubernetes Operator Pattern の controller で，2 つの controll
 
 2. MachineNodePool controller: 各 MachineType にどの Node を割り当てるかの管理と Node の健康状態による使用可否を管理します．
 
+3. Pod Resource Injector: Pod に machineType のラベルがついている Pod のコンテナに resource の指定を行います．
+
 Note: v1alpha1 では 1 つの Node を複数の Machine グループに参加させることはできない．
 
 ## controller の設計
 Machine CR の作成後， MachineLearning CR 作成後までのシーケンス図は以下のようになっている．
 
 ![シーケンス図](./v1alpha1-sequence.png)
+
+### Pod Resource Injector
+`imperator.tenzen.io/inject-pod-resource: enabled` のラベルがついた namespace のみ resource を注入する．
+デフォルトでは，index が 0 のコンテナにリソースを注入するが，ラベルに `imperator.tenzen-y.io/inject-resource` があった場合そのコンテナに注入する．
 
 ### Machine controller
 
@@ -124,13 +130,14 @@ metadata:
     imperator.tenzen-y.io/machine-group: general-machine
     imperator.tenzen-y.io/machine-type: compute-xlarge
     imperator.tenzen-y.io/pod-role: guest
+    imperator.tenzen-y.io/inject-resource: training-container
 spec:
   selector:
     matchLabels:
       imperator.tenzen-y.io/machine-group: general-machine
       imperator.tenzen-y.io/machine-type: compute-xlarge
       imperator.tenzen-y.io/pod-role: guest
-replicas: 1
+  replicas: 1
   template:
     metadata:
       labels:
@@ -227,16 +234,16 @@ spec:
         gpu: #omitempty
           type: nvidia.com/gpu
           num: 1
-          generation: turing
+          family: turing
       available: 4
     - name: compute-xlarge
       spec:
         cpu: 40000m
         memory: 128Gi
         gpu: #omitempty
-          type: nvidia.com/gpu
+          type: nvidia.com/gpu # Support only GPUs made by Nvidia 
           num: 2
-          generation: ampere
+          family: ampere
       available: 1
     - name: compute-large
       spec:
@@ -245,7 +252,7 @@ spec:
         gpu: #omitempty
           type: nvidia.com/gpu
           num: 1
-          generation: ampere
+          family: ampere
       available: 2
 status:
   condition:

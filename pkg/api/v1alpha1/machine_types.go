@@ -54,7 +54,7 @@ type GPUSpec struct {
 	Num resource.Quantity `json:"num,omitempty"`
 
 	// +optional
-	Generation string `json:"generation,omitempty"`
+	Family string `json:"generation,omitempty"`
 }
 
 // MachineStatus defines the observed state of Machine

@@ -1,8 +1,10 @@
 package cmd
 
 import (
-	"github.com/tenzen-y/imperator/pkg/api/v1alpha1"
-	controllers2 "github.com/tenzen-y/imperator/pkg/controllers"
+	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
+	"github.com/tenzen-y/imperator/pkg/controllers"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -24,7 +26,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(v1alpha1.AddToScheme(scheme))
+	utilruntime.Must(imperatorv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -47,7 +49,12 @@ func (o *options) run() error {
 		return err
 	}
 
-	if err = (&controllers2.MachineReconciler{
+	// pod resource injector
+	mgr.GetWebhookServer().Register("/mutate-imperator-pod-resource", &webhook.Admission{
+		Handler: imperatorv1alpha1.NewResourceInjector(mgr.GetClient()),
+	})
+
+	if err = (&controllers.MachineReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("imperator"),
@@ -55,11 +62,11 @@ func (o *options) run() error {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine")
 		return err
 	}
-	if err = (&v1alpha1.Machine{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&imperatorv1alpha1.Machine{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Machine")
 		return err
 	}
-	if err = (&controllers2.MachineNodePoolReconciler{
+	if err = (&controllers.MachineNodePoolReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("imperator"),

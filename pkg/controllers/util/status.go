@@ -1,8 +1,9 @@
-package utils
+package util
 
 import (
-	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+
+	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 )
 
 func GetMachineTypeUsage(availableMachine []imperatorv1alpha1.AvailableMachineCondition, machineType string) *imperatorv1alpha1.UsageCondition {

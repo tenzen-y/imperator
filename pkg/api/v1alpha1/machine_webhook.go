@@ -170,7 +170,7 @@ func (r *Machine) ValidateGPUSpec() error {
 		if m.Spec.GPU.Num.Value() < 0 {
 			return fmt.Errorf("gpu.num must be set 0 or more value")
 		}
-		if m.Spec.GPU.Generation == "" {
+		if m.Spec.GPU.Family == "" {
 			return fmt.Errorf("gpu.generation must be set value")
 		}
 	}

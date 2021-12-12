@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/imdario/mergo"
 	appsv1 "k8s.io/api/apps/v1"
@@ -23,7 +24,7 @@ import (
 
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	"github.com/tenzen-y/imperator/pkg/controllers/utils"
+	"github.com/tenzen-y/imperator/pkg/controllers/util"
 )
 
 // MachineReconciler reconciles a Machine object
@@ -98,7 +99,7 @@ func (r *MachineReconciler) updateReconcileFailedStatus(oldConditions *[]metav1.
 
 func (r *MachineReconciler) reconcileMachineNodePool(ctx context.Context, machine *imperatorv1alpha1.Machine) error {
 	logger := log.FromContext(ctx)
-	machineGroup := utils.GetMachineGroup(machine.Labels)
+	machineGroup := util.GetMachineGroup(machine.Labels)
 
 	pool := &imperatorv1alpha1.MachineNodePool{
 		TypeMeta: metav1.TypeMeta{
@@ -106,7 +107,7 @@ func (r *MachineReconciler) reconcileMachineNodePool(ctx context.Context, machin
 			APIVersion: imperatorv1alpha1.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: utils.GetMachineNodePoolName(machineGroup),
+			Name: util.GenerateMachineNodePoolName(machineGroup),
 		},
 	}
 
@@ -160,7 +161,7 @@ func (r *MachineReconciler) reconcileMachineNodePool(ctx context.Context, machin
 
 func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *imperatorv1alpha1.Machine) error {
 	logger := log.FromContext(ctx)
-	machineGroup := utils.GetMachineGroup(machine.Labels)
+	machineGroup := util.GetMachineGroup(machine.Labels)
 
 	nodePoolMachineTypeMap := make(map[string]bool)
 	for _, np := range machine.Spec.NodePool {
@@ -182,12 +183,12 @@ func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *i
 				Kind:       "StatefulSet",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.GetReservationResourceName(machineGroup, mt.Name),
+				Name:      util.GenerateReservationResourceName(machineGroup, mt.Name),
 				Namespace: consts.ImperatorCoreNamespace,
 			},
 		}
 		origin := &appsv1.StatefulSet{}
-		usage := utils.GetMachineTypeUsage(machine.Status.AvailableMachines, mt.Name)
+		usage := util.GetMachineTypeUsage(machine.Status.AvailableMachines, mt.Name)
 		if usage == nil {
 			logger.Info(fmt.Sprintf("skipped to reconcile StatefuleSet for machineType, %s", mt.Name))
 			continue
@@ -200,7 +201,7 @@ func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *i
 			} else if stsReplica == 0 && usage.Reservation == 0 {
 				stsReplica = usage.Maximum
 			}
-			utils.GenerateStatefulSet(&mt, machineGroup, stsReplica, sts)
+			util.GenerateStatefulSet(&mt, machineGroup, stsReplica, sts)
 			return ctrl.SetControllerReference(machine, sts, r.Scheme)
 		})
 
@@ -224,7 +225,7 @@ func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *i
 
 func (r *MachineReconciler) reconcileService(ctx context.Context, machine *imperatorv1alpha1.Machine) error {
 	logger := log.FromContext(ctx)
-	machineGroup := utils.GetMachineGroup(machine.Labels)
+	machineGroup := util.GetMachineGroup(machine.Labels)
 
 	for _, mt := range machine.Spec.MachineTypes {
 		svc := &corev1.Service{
@@ -233,18 +234,18 @@ func (r *MachineReconciler) reconcileService(ctx context.Context, machine *imper
 				Kind:       "Service",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      utils.GetReservationResourceName(machineGroup, mt.Name),
+				Name:      util.GenerateReservationResourceName(machineGroup, mt.Name),
 				Namespace: consts.ImperatorCoreNamespace,
 			},
 		}
 
-		usage := utils.GetMachineTypeUsage(machine.Status.AvailableMachines, mt.Name)
+		usage := util.GetMachineTypeUsage(machine.Status.AvailableMachines, mt.Name)
 		if usage == nil {
 			logger.Info(fmt.Sprintf("skipped to reconcile Service for machineType, %s", mt.Name))
 			continue
 		}
 		opeResult, err := ctrl.CreateOrUpdate(ctx, r.Client, svc, func() error {
-			utils.GenerateService(mt.Name, machineGroup, svc)
+			util.GenerateService(mt.Name, machineGroup, svc)
 			return ctrl.SetControllerReference(machine, svc, r.Scheme)
 		})
 
@@ -266,7 +267,7 @@ func (r *MachineReconciler) reconcileService(ctx context.Context, machine *imper
 
 func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperatorv1alpha1.Machine) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	machineGroup := utils.GetMachineGroup(machine.Labels)
+	machineGroup := util.GetMachineGroup(machine.Labels)
 
 	desiredMachineTypeNum := make(map[string]int32)
 	for _, mt := range machine.Spec.MachineTypes {
@@ -355,7 +356,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 				continue
 			}
 
-			podConditionTypeMap := utils.GetPodConditionTypeMap(po.Status.Conditions)
+			podConditionTypeMap := util.GetPodConditionTypeMap(po.Status.Conditions)
 
 			// Running
 			if po.Status.Phase == corev1.PodRunning {
