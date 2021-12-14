@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	testMachineGroup = "test-machine"
+	testMachineGroup = "test-machine-group"
 )
 
 func newFakeMachine() *Machine {
@@ -62,7 +62,7 @@ func newFakeMachine() *Machine {
 				{
 					Name: "test-machine1",
 					Spec: MachineDetailSpec{
-						CPU:    resource.MustParse("4000m"),
+						CPU:    resource.MustParse("4"),
 						Memory: resource.MustParse("24Gi"),
 						GPU: &GPUSpec{
 							Type:   "nvidia.com/gpu",

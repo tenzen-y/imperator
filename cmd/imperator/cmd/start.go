@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/tenzen-y/imperator/pkg/api/consts"
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/controllers"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -49,11 +50,6 @@ func (o *options) run() error {
 		return err
 	}
 
-	// pod resource injector
-	mgr.GetWebhookServer().Register("/mutate-imperator-pod-resource", &webhook.Admission{
-		Handler: imperatorv1alpha1.NewResourceInjector(mgr.GetClient()),
-	})
-
 	if err = (&controllers.MachineReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
@@ -74,6 +70,12 @@ func (o *options) run() error {
 		setupLog.Error(err, "unable to create controller", "controller", "MachineNodePool")
 		return err
 	}
+
+	// pod resource injector
+	mgr.GetWebhookServer().Register(consts.PodResourceInjectorPath, &webhook.Admission{
+		Handler: imperatorv1alpha1.NewResourceInjector(mgr.GetClient()),
+	})
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

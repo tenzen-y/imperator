@@ -41,6 +41,5 @@ var (
 	CmpStatefulSetOpts = []cmp.Option{
 		cmpopts.IgnoreFields(appsv1.StatefulSetSpec{},
 			"Selector", "Template"),
-		//"Selector", "Template", "ServiceName", "VolumeClaimTemplates", "PodManagementPolicy", "UpdateStrategy", "RevisionHistoryLimit"),
 	}
 )

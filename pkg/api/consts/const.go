@@ -5,4 +5,6 @@ const (
 	ImperatorResourceInjectionEnabled = "enabled"
 
 	ImperatorResourceInjectContainerNameKey = "imperator.tenzen-y.io/inject-resource"
+
+	PodResourceInjectorPath = "/mutate-core-v1-pod"
 )
