@@ -3,18 +3,20 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/tenzen-y/imperator/pkg/consts"
 )
 
 const (
-	testMachineGroup = "test-machine"
+	testMachineGroup = "test-machine-group"
 )
 
 func newFakeMachine() *Machine {
@@ -60,12 +62,12 @@ func newFakeMachine() *Machine {
 				{
 					Name: "test-machine1",
 					Spec: MachineDetailSpec{
-						CPU:    resource.MustParse("4000m"),
+						CPU:    resource.MustParse("4"),
 						Memory: resource.MustParse("24Gi"),
 						GPU: &GPUSpec{
-							Type:       "nvidia.com/gpu",
-							Num:        resource.MustParse("2"),
-							Generation: "ampere",
+							Type:   "nvidia.com/gpu",
+							Num:    resource.MustParse("2"),
+							Family: "ampere",
 						},
 					},
 					Available: 2,
@@ -76,9 +78,9 @@ func newFakeMachine() *Machine {
 						CPU:    resource.MustParse("2000m"),
 						Memory: resource.MustParse("12Gi"),
 						GPU: &GPUSpec{
-							Type:       "nvidia.com/gpu",
-							Num:        resource.MustParse("1"),
-							Generation: "ampere",
+							Type:   "nvidia.com/gpu",
+							Num:    resource.MustParse("1"),
+							Family: "ampere",
 						},
 					},
 					Available: 2,
@@ -193,7 +195,7 @@ var _ = Describe("Machine Webhook", func() {
 				description: "GPU generation must be set value",
 				fakeMachine: func() *Machine {
 					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.MachineTypes[0].Spec.GPU.Generation = ""
+					fakeMachine.Spec.MachineTypes[0].Spec.GPU.Family = ""
 					return fakeMachine
 				}(),
 				err: true,

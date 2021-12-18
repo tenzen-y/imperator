@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// label key
 const (
 	MachineGroupKey    = "imperator.tenzen-y.io/machine-group"
 	MachineStatusKey   = "imperator.tenzen-y.io/node-pool"
@@ -15,13 +14,12 @@ const (
 	PodRoleKey         = "imperator.tenzen-y.io/pod-role"
 	StatefulSetImage   = "alpine:3.15.0"
 	NvidiaGPUFamilyKey = "nvidia.com/gpu.family"
-	// label value
+
 	KindMachineNodePool = "MachineNodePool"
 	KindMachine         = "Machine"
 	PodRoleReservation  = "reservation"
 	PodRoleGuest        = "guest"
-	// controller name
-	OwnerControllerField     = ".metadata.ownerReference.controller"
+
 	MachineNodePoolFinalizer = "imperator-machinenodepool-finalizer"
 	NodeNotReadyTaint        = "node.kubernetes.io/not-ready"
 	SuiteTestTimeOut         = time.Second * 5
@@ -43,6 +41,5 @@ var (
 	CmpStatefulSetOpts = []cmp.Option{
 		cmpopts.IgnoreFields(appsv1.StatefulSetSpec{},
 			"Selector", "Template"),
-		//"Selector", "Template", "ServiceName", "VolumeClaimTemplates", "PodManagementPolicy", "UpdateStrategy", "RevisionHistoryLimit"),
 	}
 )

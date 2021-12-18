@@ -1,13 +1,22 @@
-package utils
+package util
 
 import (
+	"strings"
+
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	"strings"
 )
 
 func GetMachineGroup(machineLabels map[string]string) string {
 	return machineLabels[consts.MachineGroupKey]
+}
+
+func GenerateReservationResourceLabel(machineGroup, machineType string) map[string]string {
+	return map[string]string{
+		consts.MachineGroupKey: machineGroup,
+		consts.MachineTypeKey:  machineType,
+		consts.PodRoleKey:      consts.PodRoleReservation,
+	}
 }
 
 func GetScheduleMachineTypeKeys(machineTypes []imperatorv1alpha1.NodePoolMachineType) []string {
@@ -19,8 +28,4 @@ func GetScheduleMachineTypeKeys(machineTypes []imperatorv1alpha1.NodePoolMachine
 		}, "/"))
 	}
 	return machineTypeKeys
-}
-
-func GetMachineTypeLabelTaintKey(machineTypeName string) string {
-	return strings.Join([]string{imperatorv1alpha1.GroupVersion.Group, machineTypeName}, "/")
 }

@@ -25,7 +25,7 @@ import (
 
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	"github.com/tenzen-y/imperator/pkg/controllers/utils"
+	"github.com/tenzen-y/imperator/pkg/controllers/util"
 )
 
 // MachineNodePoolReconciler reconciles a MachineNodePool object
@@ -162,7 +162,7 @@ func (r *MachineNodePoolReconciler) removeNodeLabel(pool *imperatorv1alpha1.Mach
 	// remove machineType from label
 	scheduleMachineTypeKeys := make(map[string][]string, len(pool.Spec.NodePool))
 	for _, p := range pool.Spec.NodePool {
-		scheduleMachineTypeKeys[p.Name] = utils.GetScheduleMachineTypeKeys(p.MachineType)
+		scheduleMachineTypeKeys[p.Name] = util.GetScheduleMachineTypeKeys(p.MachineType)
 	}
 	if keys, exist := scheduleMachineTypeKeys[newNode.Name]; exist {
 		for _, mtKey := range keys {
@@ -178,7 +178,7 @@ func (r *MachineNodePoolReconciler) removeNodeLabel(pool *imperatorv1alpha1.Mach
 
 func (r *MachineNodePoolReconciler) removeNodeTaint(pool *imperatorv1alpha1.MachineNodePool, originNode *corev1.Node) *corev1.Node {
 	newNode := originNode.DeepCopy()
-	taints := utils.ExtractKeyValueFromTaint(newNode.Spec.Taints)
+	taints := util.ExtractKeyValueFromTaint(newNode.Spec.Taints)
 
 	// if taint has machine-status, remove it.
 	// remove machine status from taint
@@ -194,11 +194,11 @@ func (r *MachineNodePoolReconciler) removeNodeTaint(pool *imperatorv1alpha1.Mach
 	// remove machineType from taint
 	scheduleMachineTypeKeys := make(map[string][]string, len(pool.Spec.NodePool))
 	for _, p := range pool.Spec.NodePool {
-		scheduleMachineTypeKeys[p.Name] = utils.GetScheduleMachineTypeKeys(p.MachineType)
+		scheduleMachineTypeKeys[p.Name] = util.GetScheduleMachineTypeKeys(p.MachineType)
 	}
 	if keys, exist := scheduleMachineTypeKeys[newNode.Name]; exist {
 		for _, mtKey := range keys {
-			idx := utils.GetTaintKeyIndex(newNode.Spec.Taints, mtKey)
+			idx := util.GetTaintKeyIndex(newNode.Spec.Taints, mtKey)
 			if idx == nil {
 				continue
 			}
@@ -231,7 +231,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 		}
 		newNode.Annotations[consts.MachineGroupKey] = pool.Spec.MachineGroupName
 
-		taints := utils.ExtractKeyValueFromTaint(newNode.Spec.Taints)
+		taints := util.ExtractKeyValueFromTaint(newNode.Spec.Taints)
 		newPoolMachineStatusValue := imperatorv1alpha1.NodeModeReady
 		// looking for down Node.
 		for _, t := range consts.CannotUseNodeTaints {
@@ -245,7 +245,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			break
 		}
 
-		scheduleMachineTypeKey := utils.GetScheduleMachineTypeKeys(p.MachineType)
+		scheduleMachineTypeKey := util.GetScheduleMachineTypeKeys(p.MachineType)
 
 		if p.Mode == imperatorv1alpha1.NodeModeMaintenance {
 			newPoolMachineStatusValue = imperatorv1alpha1.NodeModeMaintenance
@@ -277,7 +277,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 					TimeAdded: &now,
 				})
 			} else {
-				if idx := utils.GetTaintKeyIndex(newNode.Spec.Taints, consts.MachineStatusKey); idx != nil {
+				if idx := util.GetTaintKeyIndex(newNode.Spec.Taints, consts.MachineStatusKey); idx != nil {
 					newNode.Spec.Taints[*idx] = corev1.Taint{
 						Key:       consts.MachineStatusKey,
 						Value:     newPoolMachineStatusValue.Value(),
@@ -297,7 +297,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 						TimeAdded: &now,
 					})
 				} else {
-					if idx := utils.GetTaintKeyIndex(newNode.Spec.Taints, mtKey); idx != nil {
+					if idx := util.GetTaintKeyIndex(newNode.Spec.Taints, mtKey); idx != nil {
 						newNode.Spec.Taints[*idx] = corev1.Taint{
 							Key:       mtKey,
 							Value:     pool.Spec.MachineGroupName,

@@ -3,9 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/onsi/gomega/gstruct"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"strconv"
 	"strings"
@@ -13,16 +10,19 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	"github.com/tenzen-y/imperator/pkg/controllers/utils"
+	"github.com/tenzen-y/imperator/pkg/controllers/util"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 )
 
 func waitStartedReservationResource(ctx context.Context, machineType imperatorv1alpha1.MachineType, stsReplicas int32) {
-	stsName := utils.GetReservationResourceName(testMachineMachineGroupName, machineType.Name)
+	stsName := util.GenerateReservationResourceName(testMachineMachineGroupName, machineType.Name)
 	Eventually(func() error {
 		return k8sClient.Get(ctx, client.ObjectKey{Name: stsName, Namespace: consts.ImperatorCoreNamespace}, &appsv1.StatefulSet{})
 	}, consts.SuiteTestTimeOut).Should(BeNil())
@@ -48,7 +48,7 @@ func waitStartedReservationResource(ctx context.Context, machineType imperatorv1
 	}, consts.SuiteTestTimeOut).Should(Equal(stsReplicas), testDescription)
 
 	svc := &corev1.Service{}
-	svcName := utils.GetReservationResourceName(testMachineMachineGroupName, machineType.Name)
+	svcName := util.GenerateReservationResourceName(testMachineMachineGroupName, machineType.Name)
 	Eventually(func() error {
 		return k8sClient.Get(ctx, client.ObjectKey{Name: svcName, Namespace: consts.ImperatorCoreNamespace}, svc)
 	}, consts.SuiteTestTimeOut).Should(BeNil())
@@ -136,14 +136,14 @@ func newFakeReservationPod(machineTypeName, podNumber string) *corev1.Pod {
 		TypeMeta: getPodTypeMeta(),
 		ObjectMeta: metav1.ObjectMeta{
 			Name: strings.Join([]string{
-				utils.GetReservationResourceName(testMachineMachineGroupName, machineTypeName),
+				util.GenerateReservationResourceName(testMachineMachineGroupName, machineTypeName),
 				podNumber,
 			}, "-"),
 			Namespace: consts.ImperatorCoreNamespace,
-			Labels:    utils.GetReservationResourceLabel(testMachineMachineGroupName, machineTypeName),
+			Labels:    util.GenerateReservationResourceLabel(testMachineMachineGroupName, machineTypeName),
 		},
 		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{utils.GenerateSleeperContainer()},
+			Containers: []corev1.Container{util.GenerateSleeperContainer()},
 		},
 	}
 }
@@ -198,9 +198,9 @@ var _ = Describe("machine controller envtest", func() {
 				CPU:    resource.MustParse("2000m"),
 				Memory: resource.MustParse("8Gi"),
 				GPU: &imperatorv1alpha1.GPUSpec{
-					Type:       "nvidia.com/gpu",
-					Num:        resource.MustParse("1"),
-					Generation: "ampere",
+					Type:   "nvidia.com/gpu",
+					Num:    resource.MustParse("1"),
+					Family: "ampere",
 				},
 			},
 			Available: 2,
@@ -271,7 +271,7 @@ var _ = Describe("machine controller envtest", func() {
 
 		// Check {APIVersion: imperator.tenzen-y.io/v1alpha1, Kind: MachineNodePool}
 		Eventually(func() error {
-			return k8sClient.Get(ctx, client.ObjectKey{Name: utils.GetMachineNodePoolName(testMachineMachineGroupName)}, &imperatorv1alpha1.MachineNodePool{})
+			return k8sClient.Get(ctx, client.ObjectKey{Name: util.GenerateMachineNodePoolName(testMachineMachineGroupName)}, &imperatorv1alpha1.MachineNodePool{})
 		}, consts.SuiteTestTimeOut).Should(BeNil())
 
 		// Check {APIVersion: apps/v1, Kind: StatefulSet}, {APIVersion: v1, Kind: Service}, {APIVersion: v1, Kind: Pod}
@@ -286,7 +286,7 @@ var _ = Describe("machine controller envtest", func() {
 				// Update Status of Reservation Pod
 				updatePodContainerStatus(ctx, client.ObjectKey{
 					Name: strings.Join([]string{
-						utils.GetReservationResourceName(testMachineMachineGroupName, mt.Name),
+						util.GenerateReservationResourceName(testMachineMachineGroupName, mt.Name),
 						strconv.Itoa(podNum),
 					}, "-"),
 					Namespace: consts.ImperatorCoreNamespace,
@@ -297,7 +297,7 @@ var _ = Describe("machine controller envtest", func() {
 			pods := &corev1.PodList{}
 			Eventually(func() int {
 				Expect(k8sClient.List(ctx, pods, &client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(utils.GetReservationResourceLabel(testMachineMachineGroupName, mt.Name)),
+					LabelSelector: labels.SelectorFromSet(util.GenerateReservationResourceLabel(testMachineMachineGroupName, mt.Name)),
 				})).NotTo(HaveOccurred())
 				return len(pods.Items)
 			}, consts.SuiteTestTimeOut).Should(Equal(int(mt.Available)))
@@ -326,7 +326,7 @@ var _ = Describe("machine controller envtest", func() {
 
 		testMachine2MachineAvailable := defaultTestMachineType[testMachine2].Available
 		testMachine2ReservationPodName := strings.Join([]string{
-			utils.GetReservationResourceName(testMachineMachineGroupName, testMachine2),
+			util.GenerateReservationResourceName(testMachineMachineGroupName, testMachine2),
 			"0",
 		}, "-")
 

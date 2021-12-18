@@ -16,7 +16,7 @@ import (
 
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	"github.com/tenzen-y/imperator/pkg/controllers/utils"
+	"github.com/tenzen-y/imperator/pkg/controllers/util"
 )
 
 const (
@@ -34,24 +34,6 @@ type testNode struct {
 	status      imperatorv1alpha1.MachineNodeCondition
 	taint       *bool
 	machineType []imperatorv1alpha1.NodePoolMachineType
-}
-
-func newFakeNode(nodeName string) *corev1.Node {
-	return &corev1.Node{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Node",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: nodeName,
-		},
-		Status: corev1.NodeStatus{
-			Conditions: []corev1.NodeCondition{{
-				Type:   corev1.NodeReady,
-				Status: corev1.ConditionTrue,
-			}},
-		},
-	}
 }
 
 func newFakeMachineNodePool(testNodes []testNode, testMachineTypeStock []imperatorv1alpha1.NodePoolMachineTypeStock) *imperatorv1alpha1.MachineNodePool {
@@ -80,6 +62,24 @@ func newFakeMachineNodePool(testNodes []testNode, testMachineTypeStock []imperat
 	return pool
 }
 
+func newFakeNode(nodeName string) *corev1.Node {
+	return &corev1.Node{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Node",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: nodeName,
+		},
+		Status: corev1.NodeStatus{
+			Conditions: []corev1.NodeCondition{{
+				Type:   corev1.NodeReady,
+				Status: corev1.ConditionTrue,
+			}},
+		},
+	}
+}
+
 func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 	for _, n := range testNodes {
 
@@ -95,7 +95,7 @@ func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 			target = &corev1.Node{}
 			Eventually(func() map[string]string {
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, target)).NotTo(HaveOccurred())
-				resultTaints := utils.ExtractKeyValueFromTaint(target.Spec.Taints)
+				resultTaints := util.ExtractKeyValueFromTaint(target.Spec.Taints)
 				delete(resultTaints, consts.NodeNotReadyTaint)
 				return resultTaints
 			}, consts.SuiteTestTimeOut).ShouldNot(BeEmpty())
@@ -104,15 +104,15 @@ func waitUpdateTestNode(ctx context.Context, testNodes []testNode) {
 		nodeLabels := target.Labels
 		var nodeTaints map[string]string
 		if *n.taint {
-			nodeTaints = utils.ExtractKeyValueFromTaint(target.Spec.Taints)
+			nodeTaints = util.ExtractKeyValueFromTaint(target.Spec.Taints)
 			Expect(nodeTaints).To(HaveKeyWithValue(consts.MachineStatusKey, n.mode.Value()))
 		}
 		Expect(nodeLabels).To(HaveKeyWithValue(consts.MachineStatusKey, n.mode.Value()))
 		Expect(target.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineNodePoolMachineGroupName))
 		for _, mt := range n.machineType {
-			Expect(nodeLabels).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
+			Expect(nodeLabels).To(HaveKeyWithValue(imperatorv1alpha1.GenerateMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
 			if *n.taint {
-				Expect(nodeTaints).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
+				Expect(nodeTaints).To(HaveKeyWithValue(imperatorv1alpha1.GenerateMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
 			}
 		}
 	}
@@ -287,7 +287,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 				target = &corev1.Node{}
 				Eventually(func() map[string]string {
 					Expect(k8sClient.Get(ctx, client.ObjectKey{Name: n.name}, target)).NotTo(HaveOccurred())
-					nodeTaints := utils.ExtractKeyValueFromTaint(target.Spec.Taints)
+					nodeTaints := util.ExtractKeyValueFromTaint(target.Spec.Taints)
 					delete(nodeTaints, consts.NodeNotReadyTaint)
 					return nodeTaints
 				}, consts.SuiteTestTimeOut).Should(BeEmpty())
@@ -387,7 +387,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 		getReadyTestNodeB = &corev1.Node{}
 		Eventually(func() string {
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: readyTestNodeB}, getReadyTestNodeB)).NotTo(HaveOccurred())
-			return utils.ExtractKeyValueFromTaint(getReadyTestNodeB.Spec.Taints)[consts.MachineStatusKey]
+			return util.ExtractKeyValueFromTaint(getReadyTestNodeB.Spec.Taints)[consts.MachineStatusKey]
 		}, consts.SuiteTestTimeOut).Should(Equal(imperatorv1alpha1.NodeModeNotReady.Value()))
 
 		getPool = &imperatorv1alpha1.MachineNodePool{}
@@ -448,7 +448,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 			if *node.taint {
 				Eventually(func() string {
 					Expect(k8sClient.Get(ctx, client.ObjectKey{Name: node.name}, getNode)).NotTo(HaveOccurred())
-					return utils.ExtractKeyValueFromTaint(getNode.Spec.Taints)[consts.MachineStatusKey]
+					return util.ExtractKeyValueFromTaint(getNode.Spec.Taints)[consts.MachineStatusKey]
 				}, consts.SuiteTestTimeOut).Should(Equal(node.mode.Value()))
 			}
 
@@ -483,7 +483,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 			}
 			Eventually(func() map[string]string {
 				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: tn.name}, getNode)).NotTo(HaveOccurred())
-				actual = utils.ExtractKeyValueFromTaint(getNode.Spec.Taints)
+				actual = util.ExtractKeyValueFromTaint(getNode.Spec.Taints)
 				delete(actual, consts.NodeNotReadyTaint)
 				return actual
 			}, consts.SuiteTestTimeOut).Should(HaveLen(expectedTaintNum))
@@ -542,7 +542,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 			if *tn.taint {
 				Eventually(func() map[string]string {
 					Expect(k8sClient.Get(ctx, client.ObjectKey{Name: tn.name}, getNode))
-					nodeTaints = utils.ExtractKeyValueFromTaint(getNode.Spec.Taints)
+					nodeTaints = util.ExtractKeyValueFromTaint(getNode.Spec.Taints)
 					delete(nodeTaints, consts.NodeNotReadyTaint)
 					return nodeTaints
 				}, consts.SuiteTestTimeOut).Should(HaveLen(expectedKeyNum))
@@ -550,9 +550,9 @@ var _ = Describe("machinenodepool controller envtest", func() {
 
 			Expect(getNode.Annotations).To(HaveKeyWithValue(consts.MachineGroupKey, testMachineNodePoolMachineGroupName))
 			for _, mt := range tn.machineType {
-				Expect(nodeLabels).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
+				Expect(nodeLabels).To(HaveKeyWithValue(imperatorv1alpha1.GenerateMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
 				if *tn.taint {
-					Expect(nodeTaints).To(HaveKeyWithValue(utils.GetMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
+					Expect(nodeTaints).To(HaveKeyWithValue(imperatorv1alpha1.GenerateMachineTypeLabelTaintKey(mt.Name), testMachineNodePoolMachineGroupName))
 				}
 			}
 		}

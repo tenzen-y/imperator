@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"context"
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
-	"github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -16,7 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"testing"
+
+	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
+	"github.com/tenzen-y/imperator/pkg/consts"
 	//+kubebuilder:scaffold:imports
 )
 

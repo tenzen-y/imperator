@@ -15,7 +15,7 @@ webhooks:
       namespace: system
       path: /mutate-imperator-tenzen-y-io-v1alpha1-machine
   failurePolicy: Fail
-  name: mmachine.kb.io
+  name: defaulter.machine.imperator.tenzen-y.io
   rules:
   - apiGroups:
     - imperator.tenzen-y.io
@@ -26,6 +26,27 @@ webhooks:
     - UPDATE
     resources:
     - machines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-core-v1-pod
+  failurePolicy: Fail
+  name: mutator.pod.imperator.tenzen-y.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
   sideEffects: None
 
 ---
@@ -44,7 +65,7 @@ webhooks:
       namespace: system
       path: /validate-imperator-tenzen-y-io-v1alpha1-machine
   failurePolicy: Fail
-  name: vmachine.kb.io
+  name: validator.machine.imperator.tenzen-y.io
   rules:
   - apiGroups:
     - imperator.tenzen-y.io
