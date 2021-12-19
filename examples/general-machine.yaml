@@ -1,0 +1,19 @@
+apiVersion: imperator.tenzen-y.io/v1alpha1
+kind: Machine
+metadata:
+  name: general-machine
+  labels:
+    imperator.tenzen-y.io/machine-group: general-machine
+spec:
+  nodePool:
+    - name: kind-control-plane
+      mode: ready
+      taint: false # omitempty;default=false
+      machineType:
+        - name: compute-small # Support only a machineType in first release
+  machineTypes:
+    - name: compute-small
+      spec:
+        cpu: 600m
+        memory: 1Gi
+      available: 1

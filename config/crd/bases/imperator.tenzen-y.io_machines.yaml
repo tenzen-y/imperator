@@ -143,6 +143,11 @@ spec:
                           format: int32
                           minimum: 0
                           type: integer
+                      required:
+                      - maximum
+                      - reservation
+                      - used
+                      - waiting
                       type: object
                   type: object
                 type: array

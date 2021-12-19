@@ -36,6 +36,7 @@ webhooks:
       namespace: system
       path: /mutate-core-v1-pod
   failurePolicy: Fail
+  matchPolicy: Equivalent
   name: mutator.pod.imperator.tenzen-y.io
   rules:
   - apiGroups:

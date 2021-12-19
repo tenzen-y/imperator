@@ -1,0 +1,12 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+  - name: mutator.pod.imperator.tenzen-y.io
+    namespaceSelector:
+      matchExpressions:
+        - key: "imperator.tenzen.io/inject-resource"
+          operator: In
+          values: ["enabled"]

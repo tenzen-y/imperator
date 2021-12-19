@@ -40,6 +40,7 @@ type MachineNodePoolReconciler struct {
 //+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=core,resources=nodes/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=events,verbs=create;update;patch
 
 // Reconcile is main function for reconciliation loop
 func (r *MachineNodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

@@ -63,36 +63,36 @@ type MachineStatus struct {
 	// +optional
 	Conditions []metav1.Condition `json:"condition,omitempty"`
 
-	// +optional
+	// +kubebuilder:validation:Required
 	AvailableMachines []AvailableMachineCondition `json:"availableMachines,omitempty"`
 }
 
 type AvailableMachineCondition struct {
 
-	// +optional
+	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 
-	// +optional
+	// +kubebuilder:validation:Required
 	Usage UsageCondition `json:"usage,omitempty"`
 }
 
 type UsageCondition struct {
 
-	// +optional
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum:=0
-	Maximum int32 `json:"maximum,omitempty"`
+	Maximum int32 `json:"maximum"`
 
-	// +optional
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum:=0
-	Reservation int32 `json:"reservation,omitempty"`
+	Reservation int32 `json:"reservation"`
 
-	// +optional
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum:=0
-	Used int32 `json:"used,omitempty"`
+	Used int32 `json:"used"`
 
-	// +optional
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum:=0
-	Waiting int32 `json:"waiting,omitempty"`
+	Waiting int32 `json:"waiting"`
 }
 
 //+kubebuilder:object:root=true

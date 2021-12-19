@@ -1,5 +1,0 @@
-## Append samples you want in your CSV to this file as resources ##
-resources:
-- imperator_v1alpha1_machine.yaml
-- imperator_v1alpha1_machinenodepool.yaml
-#+kubebuilder:scaffold:manifestskustomizesamples

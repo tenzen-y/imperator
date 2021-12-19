@@ -23,6 +23,9 @@ const (
 	MachineNodePoolFinalizer = "imperator-machinenodepool-finalizer"
 	NodeNotReadyTaint        = "node.kubernetes.io/not-ready"
 	SuiteTestTimeOut         = time.Second * 5
+
+	ImperatorResourceInjectionKey     = "imperator.tenzen.io/inject-resource"
+	ImperatorResourceInjectionEnabled = "enabled"
 )
 
 var (

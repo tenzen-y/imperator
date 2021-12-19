@@ -15,12 +15,10 @@ func GenerateSleeperContainer() corev1.Container {
 		Name:  "sleeper",
 		Image: consts.StatefulSetImage,
 		Command: []string{
-			"sh",
-			"-c",
+			"sleep",
 		},
 		Args: []string{
-			"sleep",
-			"inf",
+			"infinity",
 		},
 	}
 }

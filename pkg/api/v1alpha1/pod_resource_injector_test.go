@@ -6,7 +6,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/tenzen-y/imperator/pkg/api/consts"
 	commonconsts "github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
@@ -35,6 +34,25 @@ func newFakePod(podName, nsName string, podLabels map[string]string) *corev1.Pod
 		},
 	}
 	return pod
+}
+
+func updateUsageConditions() {
+	machine := &Machine{}
+	Expect(k8sClient.Get(ctx, client.ObjectKey{Name: testMachineGroup}, machine)).NotTo(HaveOccurred())
+	for _, mt := range machine.Spec.MachineTypes {
+		machine.Status.AvailableMachines = append(machine.Status.AvailableMachines, AvailableMachineCondition{
+			Name: mt.Name,
+			Usage: UsageCondition{
+				Maximum:     mt.Available,
+				Reservation: mt.Available,
+				Used:        0,
+				Waiting:     0,
+			},
+		})
+	}
+	Eventually(func() error {
+		return k8sClient.Status().Update(ctx, machine, &client.UpdateOptions{})
+	}, commonconsts.SuiteTestTimeOut).Should(BeNil())
 }
 
 func newTestGuestLabels(machineTypeName string) map[string]string {
@@ -111,6 +129,7 @@ var _ = Describe("Machine Webhook", func() {
 		const injectedPodName = "injected-pod"
 		machine := newFakeMachine()
 		Expect(k8sClient.Create(ctx, machine, &client.CreateOptions{})).NotTo(HaveOccurred())
+		updateUsageConditions()
 
 		pod := newFakePod(injectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
@@ -170,21 +189,6 @@ var _ = Describe("Machine Webhook", func() {
 	})
 
 	It(fmt.Sprintf("Skip to inject resources, affinity, and toleration to Pod "+
-		"since Pod will be deployed to namespace which does not have a label, <%s=%s>.",
-		consts.ImperatorResourceInjectContainerNameKey, consts.ImperatorResourceInjectionEnabled), func() {
-
-		const notInjectedPodName = "not-injected-pod"
-		machine := newFakeMachine()
-		Expect(k8sClient.Create(ctx, machine, &client.CreateOptions{})).NotTo(HaveOccurred())
-
-		pod := newFakePod(notInjectedPodName, notInjectedNs, newTestGuestLabels(testMachineTypeName))
-		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
-
-		checkNoInjection(pod)
-	})
-
-	It(fmt.Sprintf("Skip to inject resources, affinity, and toleration to Pod "+
 		"since Pod does not have necessary labels, <%s>=*, <%s>=*, <%s>=<%s>", commonconsts.MachineGroupKey,
 		commonconsts.MachineTypeKey, commonconsts.PodRoleKey, commonconsts.PodRoleGuest), func() {
 
@@ -236,6 +240,7 @@ var _ = Describe("Machine Webhook", func() {
 		const injectedPodName = "injected-pod"
 		machine := newFakeMachine()
 		Expect(k8sClient.Create(ctx, machine, &client.CreateOptions{})).NotTo(HaveOccurred())
+		updateUsageConditions()
 
 		pod := newFakePod(injectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
@@ -278,6 +283,7 @@ var _ = Describe("Machine Webhook", func() {
 
 		fakeMachine := newFakeMachine()
 		Expect(k8sClient.Create(ctx, fakeMachine, &client.CreateOptions{})).NotTo(HaveOccurred())
+		updateUsageConditions()
 
 		for _, test := range testCases {
 			err := k8sClient.Create(ctx, test.fakePod, &client.CreateOptions{})

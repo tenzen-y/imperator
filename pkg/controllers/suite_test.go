@@ -69,6 +69,11 @@ var _ = BeforeSuite(func() {
 	for _, nsName := range []string{consts.ImperatorCoreNamespace, testGuestNs} {
 		ns := &corev1.Namespace{}
 		ns.Name = nsName
+		if nsName == testGuestNs {
+			ns.Labels = map[string]string{
+				consts.ImperatorResourceInjectionKey: consts.ImperatorResourceInjectionEnabled,
+			}
+		}
 		Expect(k8sClient.Create(context.Background(), ns, &client.CreateOptions{})).NotTo(HaveOccurred())
 	}
 

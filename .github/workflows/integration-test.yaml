@@ -1,0 +1,59 @@
+name: integration test
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        cluster_version: ["1.20.14", "1.21.8", "1.22.5", "1.23.1"]
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      -
+        name: Setup minikube
+        uses: manusa/actions-setup-minikube@v2.4.2
+        with:
+          minikube version: "v1.24.0"
+          kubernetes version: ${{ matrix.cluster_version }}
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+      -
+        name: Wait for starting minkube cluster
+        run: |
+          kubectl wait --for condition=ready --timeout=5m node minikube
+          kubectl get nodes
+      -
+        name: Build imperator
+        run: docker build -t ghcr.io/tenzen-y/imperator:dev -f cmd/imperator/Dockerfile --build-arg VERSION=dev .
+      -
+        name: Load imperator image
+        run: minikube image load ghcr.io/tenzen-y/imperator:dev
+      -
+        name: Install tools
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          chmod +x kustomize
+          mv kustomize /usr/local/bin/kustomize
+          curl -OL https://github.com/mikefarah/yq/releases/download/v4.16.1/yq_linux_amd64
+          chmod +x yq_linux_amd64
+          mv yq_linux_amd64 /usr/local/bin/yq
+      -
+        name: Deploy Cert Manager
+        run: |
+          kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
+          kubectl wait pods -n cert-manager --for condition=ready --timeout=5m -l "app.kubernetes.io/name in (webhook,cainjector,cert-manager)"
+      -
+        name: Start integration test
+        run: bash hack/integration-test.sh minikube
