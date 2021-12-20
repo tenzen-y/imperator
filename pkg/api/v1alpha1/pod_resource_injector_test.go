@@ -3,14 +3,16 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	commonconsts "github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/tenzen-y/imperator/pkg/consts"
 )
 
 const (
@@ -52,14 +54,14 @@ func updateUsageConditions() {
 	}
 	Eventually(func() error {
 		return k8sClient.Status().Update(ctx, machine, &client.UpdateOptions{})
-	}, commonconsts.SuiteTestTimeOut).Should(BeNil())
+	}, consts.SuiteTestTimeOut).Should(BeNil())
 }
 
 func newTestGuestLabels(machineTypeName string) map[string]string {
 	return map[string]string{
-		commonconsts.MachineGroupKey: testMachineGroup,
-		commonconsts.MachineTypeKey:  machineTypeName,
-		commonconsts.PodRoleKey:      commonconsts.PodRoleGuest,
+		consts.MachineGroupKey: testMachineGroup,
+		consts.MachineTypeKey:  machineTypeName,
+		consts.PodRoleKey:      consts.PodRoleGuest,
 	}
 }
 
@@ -70,14 +72,14 @@ func checkNoInjection(pod *corev1.Pod) {
 		getPod := &corev1.Pod{}
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
 		return cmp.Diff(getPod.Spec.Containers[0].Resources, expectedResource)
-	}, commonconsts.SuiteTestTimeOut).Should(BeEmpty())
+	}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
 	//Check Pod Affinity
 	Eventually(func() *corev1.Affinity {
 		getPod := &corev1.Pod{}
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
 		return getPod.Spec.Affinity
-	}, commonconsts.SuiteTestTimeOut).Should(BeNil())
+	}, consts.SuiteTestTimeOut).Should(BeNil())
 
 	// Check Pod Toleration
 	expectedToleration := []corev1.Toleration{
@@ -98,7 +100,7 @@ func checkNoInjection(pod *corev1.Pod) {
 		getPod := &corev1.Pod{}
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
 		return getPod.Spec.Tolerations
-	}, commonconsts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
+	}, consts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
 }
 
 var _ = Describe("Machine Webhook", func() {
@@ -120,7 +122,7 @@ var _ = Describe("Machine Webhook", func() {
 			Expect(k8sClient.Create(ctx, node, &client.CreateOptions{})).NotTo(HaveOccurred())
 			Eventually(func() error {
 				return k8sClient.Get(ctx, client.ObjectKey{Name: name}, &corev1.Node{})
-			}, commonconsts.SuiteTestTimeOut).Should(BeNil())
+			}, consts.SuiteTestTimeOut).Should(BeNil())
 		}
 		Expect(os.Setenv("SKIP_OWNER_CHECK", "true")).NotTo(HaveOccurred())
 	})
@@ -145,7 +147,7 @@ var _ = Describe("Machine Webhook", func() {
 			getPod := &corev1.Pod{}
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
 			return cmp.Diff(getPod.Spec.Containers[0].Resources, expectedResource)
-		}, commonconsts.SuiteTestTimeOut).Should(BeEmpty())
+		}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
 		//Check Pod Affinity
 		expectedAffinity := &corev1.Affinity{
@@ -163,7 +165,7 @@ var _ = Describe("Machine Webhook", func() {
 			getPod := &corev1.Pod{}
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
 			return cmp.Diff(getPod.Spec.Affinity, expectedAffinity)
-		}, commonconsts.SuiteTestTimeOut).Should(BeEmpty())
+		}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
 		// Check Pod Toleration
 		expectedToleration := GenerateToleration(testMachineTypeName, testMachineGroup)
@@ -184,13 +186,13 @@ var _ = Describe("Machine Webhook", func() {
 			getPod := &corev1.Pod{}
 			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
 			return getPod.Spec.Tolerations
-		}, commonconsts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
+		}, consts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
 
 	})
 
 	It(fmt.Sprintf("Skip to inject resources, affinity, and toleration to Pod "+
-		"since Pod does not have necessary labels, <%s>=*, <%s>=*, <%s>=<%s>", commonconsts.MachineGroupKey,
-		commonconsts.MachineTypeKey, commonconsts.PodRoleKey, commonconsts.PodRoleGuest), func() {
+		"since Pod does not have necessary labels, <%s>=*, <%s>=*, <%s>=<%s>", consts.MachineGroupKey,
+		consts.MachineTypeKey, consts.PodRoleKey, consts.PodRoleGuest), func() {
 
 		const notInjectedPodName = "injected-pod"
 		machine := newFakeMachine()
@@ -198,7 +200,7 @@ var _ = Describe("Machine Webhook", func() {
 
 		// missing "imperator.tenzen-y.io/machine-group"
 		pod := newFakePod(notInjectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
-		delete(pod.Labels, commonconsts.MachineGroupKey)
+		delete(pod.Labels, consts.MachineGroupKey)
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
 		checkNoInjection(pod)
@@ -206,7 +208,7 @@ var _ = Describe("Machine Webhook", func() {
 
 		// missing "imperator.tenzen-y.io/machine-type"
 		pod = newFakePod(notInjectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
-		delete(pod.Labels, commonconsts.MachineTypeKey)
+		delete(pod.Labels, consts.MachineTypeKey)
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
 		checkNoInjection(pod)
@@ -214,7 +216,7 @@ var _ = Describe("Machine Webhook", func() {
 
 		// missing "imperator.tenzen-y.io/pod-role=guest"
 		pod = newFakePod(notInjectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
-		delete(pod.Labels, commonconsts.PodRoleKey)
+		delete(pod.Labels, consts.PodRoleKey)
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
 		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
 		checkNoInjection(pod)
@@ -231,7 +233,7 @@ var _ = Describe("Machine Webhook", func() {
 	//
 	//	getPod := &corev1.Pod{}
 	//	Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
-	//	getPod.Labels[commonconsts.MachineTypeKey] = "test-machine2"
+	//	getPod.Labels[consts.MachineTypeKey] = "test-machine2"
 	//
 	//	Expect(k8sClient.Update(ctx, getPod, &client.UpdateOptions{})).NotTo(HaveOccurred())
 	//})
@@ -269,7 +271,7 @@ var _ = Describe("Machine Webhook", func() {
 				description: "There is not MachineGroup",
 				fakePod: func() *corev1.Pod {
 					pod := newFakePod("missing-machine-group", injectedNs, newTestGuestLabels(testMachineTypeName))
-					pod.Labels[commonconsts.MachineGroupKey] = "null-machine-group"
+					pod.Labels[consts.MachineGroupKey] = "null-machine-group"
 					return pod
 				}(),
 				err: true,

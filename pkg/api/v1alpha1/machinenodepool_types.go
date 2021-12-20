@@ -8,7 +8,7 @@ import (
 type MachineNodePoolSpec struct {
 
 	// MachineGroupName is node pool group
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	MachineGroupName string `json:"machineGroupName"`
 
 	// NodePool is node list that machineGroup is managing.
@@ -109,7 +109,7 @@ type MachineNodePool struct {
 	Status MachineNodePoolStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // MachineNodePoolList contains a list of MachineNodePool
 type MachineNodePoolList struct {

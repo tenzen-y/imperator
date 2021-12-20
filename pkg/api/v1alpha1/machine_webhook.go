@@ -3,7 +3,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
-	"github.com/tenzen-y/imperator/pkg/consts"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -12,6 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/tenzen-y/imperator/pkg/consts"
 )
 
 // log is for logging in this package.
@@ -29,7 +31,7 @@ func (r *Machine) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-//+kubebuilder:webhook:path=/mutate-imperator-tenzen-y-io-v1alpha1-machine,mutating=true,failurePolicy=fail,sideEffects=None,groups=imperator.tenzen-y.io,resources=machines,verbs=create;update,versions=v1alpha1,name=defaulter.machine.imperator.tenzen-y.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/mutate-imperator-tenzen-y-io-v1alpha1-machine,mutating=true,failurePolicy=fail,sideEffects=None,groups=imperator.tenzen-y.io,resources=machines,verbs=create;update,versions=v1alpha1,name=defaulter.machine.imperator.tenzen-y.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &Machine{}
 
@@ -60,7 +62,7 @@ func (r *Machine) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-imperator-tenzen-y-io-v1alpha1-machine,mutating=false,failurePolicy=fail,sideEffects=None,groups=imperator.tenzen-y.io,resources=machines,verbs=create;update,versions=v1alpha1,name=validator.machine.imperator.tenzen-y.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/validate-imperator-tenzen-y-io-v1alpha1-machine,mutating=false,failurePolicy=fail,sideEffects=None,groups=imperator.tenzen-y.io,resources=machines,verbs=create;update,versions=v1alpha1,name=validator.machine.imperator.tenzen-y.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &Machine{}
 

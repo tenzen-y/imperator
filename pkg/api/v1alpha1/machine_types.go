@@ -104,9 +104,9 @@ type UsageCondition struct {
 	Waiting int32 `json:"waiting"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 
 // Machine is the Schema for the machines API
 type Machine struct {
@@ -117,7 +117,7 @@ type Machine struct {
 	Status MachineStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // MachineList contains a list of Machine
 type MachineList struct {

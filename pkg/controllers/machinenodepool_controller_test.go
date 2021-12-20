@@ -236,7 +236,7 @@ var _ = Describe("machinenodepool controller envtest", func() {
 			Client:   k8sClient,
 			Scheme:   scheme,
 			Recorder: mgr.GetEventRecorderFor("imperator"),
-		}).SetupWithManager(mgr)).NotTo(HaveOccurred())
+		}).SetupWithManager(ctx, mgr)).NotTo(HaveOccurred())
 
 		if err := os.Setenv("ENVTEST", "true"); err != nil {
 			panic(err)

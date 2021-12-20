@@ -4,22 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/google/go-cmp/cmp"
-	"github.com/tenzen-y/imperator/pkg/api/consts"
-	commonconsts "github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/utils/pointer"
-	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/tenzen-y/imperator/pkg/consts"
 )
 
 var priLogger = ctrl.Log.WithName("pod-resource-injector")
 
-//+kubebuilder:webhook:path=/mutate-core-v1-pod,matchPolicy=equivalent,mutating=true,failurePolicy=fail,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mutator.pod.imperator.tenzen-y.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/mutate-core-v1-pod,matchPolicy=equivalent,mutating=true,failurePolicy=fail,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mutator.pod.imperator.tenzen-y.io,admissionReviewVersions={v1,v1beta1}
 
 func NewResourceInjector(c client.Client) *resourceInjector {
 	return &resourceInjector{
@@ -65,13 +66,13 @@ func (r *resourceInjector) Handle(ctx context.Context, req admission.Request) ad
 
 func (r *resourceInjector) requiredInjection(pod *corev1.Pod) bool {
 	// check pod label
-	if _, exist := pod.Labels[commonconsts.MachineGroupKey]; !exist {
+	if _, exist := pod.Labels[consts.MachineGroupKey]; !exist {
 		return false
 	}
-	if _, exist := pod.Labels[commonconsts.MachineTypeKey]; !exist {
+	if _, exist := pod.Labels[consts.MachineTypeKey]; !exist {
 		return false
 	}
-	if role := pod.Labels[commonconsts.PodRoleKey]; role != commonconsts.PodRoleGuest {
+	if role := pod.Labels[consts.PodRoleKey]; role != consts.PodRoleGuest {
 		return false
 	}
 
@@ -106,8 +107,8 @@ func (r *resourceInjector) replacePods(ctx context.Context, pod *corev1.Pod) err
 
 func (r *resourceInjector) injectToPod(ctx context.Context, pod *corev1.Pod) error {
 	injectingTargetContainerIdx := findInjectingTargetContainerIndex(pod)
-	machineGroup := pod.Labels[commonconsts.MachineGroupKey]
-	machineTypeName := pod.Labels[commonconsts.MachineTypeKey]
+	machineGroup := pod.Labels[consts.MachineGroupKey]
+	machineTypeName := pod.Labels[consts.MachineTypeKey]
 
 	targetMachineType, machineTypeUsage, err := r.findMachineType(ctx, machineGroup, machineTypeName)
 	if err != nil {
@@ -140,7 +141,7 @@ func (r *resourceInjector) findMachineType(ctx context.Context, machineGroup, ma
 	machines := &MachineList{}
 	if err := r.Client.List(ctx, machines, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
-			commonconsts.MachineGroupKey: machineGroup,
+			consts.MachineGroupKey: machineGroup,
 		}),
 	}); err != nil {
 		return nil, nil, err

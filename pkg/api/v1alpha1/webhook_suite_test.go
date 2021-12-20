@@ -4,9 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/tenzen-y/imperator/pkg/api/consts"
-	commonconsts "github.com/tenzen-y/imperator/pkg/consts"
-	corev1 "k8s.io/api/core/v1"
 	"net"
 	"path/filepath"
 	"testing"
@@ -14,7 +11,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -24,6 +21,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/tenzen-y/imperator/pkg/consts"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -70,7 +69,7 @@ var _ = BeforeSuite(func() {
 	err = clientgoscheme.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
@@ -95,7 +94,7 @@ var _ = BeforeSuite(func() {
 		Handler: NewResourceInjector(k8sClient),
 	})
 
-	//+kubebuilder:scaffold:webhook
+	// +kubebuilder:scaffold:webhook
 
 	go func() {
 		err = mgr.Start(ctx)
@@ -136,7 +135,7 @@ var _ = BeforeSuite(func() {
 		namespace.Name = ns.name
 		if ns.requiredInjection {
 			namespace.Labels = map[string]string{
-				commonconsts.ImperatorResourceInjectionKey: commonconsts.ImperatorResourceInjectionEnabled,
+				consts.ImperatorResourceInjectionKey: consts.ImperatorResourceInjectionEnabled,
 			}
 		}
 		description := fmt.Sprintf("create namespace, <%s>", ns.name)
