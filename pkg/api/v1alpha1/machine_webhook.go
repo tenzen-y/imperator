@@ -183,8 +183,18 @@ func (r *Machine) ValidateGPUSpec() error {
 		if m.Spec.GPU.Num.Value() < 0 {
 			return fmt.Errorf("gpu.num must be set 0 or more value")
 		}
-		if m.Spec.GPU.Family == "" {
-			return fmt.Errorf("gpu.generation must be set value")
+		var gpuSelectorTypes []string
+		for _, s := range []string{m.Spec.GPU.Family, m.Spec.GPU.Product, m.Spec.GPU.Machine} {
+			if s == "" {
+				continue
+			}
+			gpuSelectorTypes = append(gpuSelectorTypes, s)
+		}
+
+		if gpuSelectorTypes == nil {
+			return fmt.Errorf("you must set a value for either gpu.family, gpu.product or gpu.machine")
+		} else if len(gpuSelectorTypes) > 1 {
+			return fmt.Errorf("only one GPU family, product or machine cane be set")
 		}
 	}
 	return nil

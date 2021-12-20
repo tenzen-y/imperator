@@ -53,8 +53,17 @@ type GPUSpec struct {
 	// +optional
 	Num resource.Quantity `json:"num,omitempty"`
 
+	// nvidia.com/gpu.family
 	// +optional
-	Family string `json:"generation,omitempty"`
+	Family string `json:"family,omitempty"`
+
+	// nvidia.com/gpu.product
+	// +optional
+	Product string `json:"product,omitempty"`
+
+	// nvidia.com/gpu.machine
+	// +optional
+	Machine string `json:"machine,omitempty"`
 }
 
 // MachineStatus defines the observed state of Machine

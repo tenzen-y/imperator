@@ -233,7 +233,7 @@ spec:
         gpu: #omitempty
           type: nvidia.com/gpu
           num: 1
-          family: turing
+          machine: DGX-1
       available: 4
     - name: compute-xlarge
       spec:
@@ -242,7 +242,7 @@ spec:
         gpu: #omitempty
           type: nvidia.com/gpu # Support only GPUs made by Nvidia 
           num: 2
-          family: ampere
+          product: "NVIDIA-GeForce-RTX-3090"
       available: 1
     - name: compute-large
       spec:

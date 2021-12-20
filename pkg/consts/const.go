@@ -8,12 +8,16 @@ import (
 )
 
 const (
-	MachineGroupKey    = "imperator.tenzen-y.io/machine-group"
-	MachineStatusKey   = "imperator.tenzen-y.io/node-pool"
-	MachineTypeKey     = "imperator.tenzen-y.io/machine-type"
-	PodRoleKey         = "imperator.tenzen-y.io/pod-role"
-	StatefulSetImage   = "alpine:3.15.0"
-	NvidiaGPUFamilyKey = "nvidia.com/gpu.family"
+	MachineGroupKey  = "imperator.tenzen-y.io/machine-group"
+	MachineStatusKey = "imperator.tenzen-y.io/node-pool"
+	MachineTypeKey   = "imperator.tenzen-y.io/machine-type"
+	PodRoleKey       = "imperator.tenzen-y.io/pod-role"
+
+	StatefulSetImage = "alpine:3.15.0"
+
+	NvidiaGPUFamilyKey  = "nvidia.com/gpu.family"
+	NvidiaGPUProductKey = "nvidia.com/gpu.product"
+	NvidiaGPUMachineKey = "nvidia.com/gpu.machine"
 
 	KindMachineNodePool = "MachineNodePool"
 	KindMachine         = "Machine"
