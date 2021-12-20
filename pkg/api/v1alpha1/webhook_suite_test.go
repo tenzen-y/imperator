@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/tenzen-y/imperator/pkg/api/consts"
+	commonconsts "github.com/tenzen-y/imperator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"net"
 	"path/filepath"
@@ -135,7 +136,7 @@ var _ = BeforeSuite(func() {
 		namespace.Name = ns.name
 		if ns.requiredInjection {
 			namespace.Labels = map[string]string{
-				consts.ImperatorResourceInjectionKey: consts.ImperatorResourceInjectionEnabled,
+				commonconsts.ImperatorResourceInjectionKey: commonconsts.ImperatorResourceInjectionEnabled,
 			}
 		}
 		description := fmt.Sprintf("create namespace, <%s>", ns.name)

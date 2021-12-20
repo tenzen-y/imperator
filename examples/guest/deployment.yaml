@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guest-deployment
+  namespace: guest-ns
+  labels:
+    app.kubernetes.io/name: guest-app
+spec:
+  selector:
+    matchLabels:
+      imperator.tenzen-y.io/machine-group: general-machine
+      imperator.tenzen-y.io/machine-type: compute-small
+      imperator.tenzen-y.io/pod-role: guest
+      imperator.tenzen-y.io/inject-resource: guest-container
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        imperator.tenzen-y.io/machine-group: general-machine
+        imperator.tenzen-y.io/machine-type: compute-small
+        imperator.tenzen-y.io/pod-role: guest
+        imperator.tenzen-y.io/inject-resource: guest-container
+    spec:
+      containers:
+        - name: guest-container
+          image: alpine:3.15.0
+          command: ["sleep"]
+          args: ["300s"]

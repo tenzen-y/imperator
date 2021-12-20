@@ -23,7 +23,7 @@ Machine CR の作成後， MachineLearning CR 作成後までのシーケンス�
 ![シーケンス図](./v1alpha1-sequence.png)
 
 ### Pod Resource Injector
-`imperator.tenzen.io/inject-pod-resource: enabled` のラベルがついた namespace のみ resource を注入する．
+`imperator.tenzen.io/inject-resource: enabled` のラベルがついた namespace のみ resource を注入する．
 デフォルトでは，index が 0 のコンテナにリソースを注入するが，ラベルに `imperator.tenzen-y.io/inject-resource` があった場合そのコンテナに注入する．
 
 ### Machine controller
@@ -106,8 +106,8 @@ spec:
       containers:
       - name: sleeper
         image: alpine:3.15.0
-        command: ["sh", "-c"]
-        args: ["sleep", "inf"]
+        command: ["sleep"]
+        args: ["infinity"]
         resources:
           requests:
             cpu: "40000m"
@@ -130,7 +130,7 @@ metadata:
     imperator.tenzen-y.io/machine-group: general-machine
     imperator.tenzen-y.io/machine-type: compute-xlarge
     imperator.tenzen-y.io/pod-role: guest
-    imperator.tenzen-y.io/inject-resource: training-container
+    imperator.tenzen-y.io/injecting-container: training-container
 spec:
   selector:
     matchLabels:
@@ -145,7 +145,6 @@ spec:
         imperator.tenzen-y.io/machine-type: compute-xlarge
         imperator.tenzen-y.io/pod-role: guest
     spec:
-      terminationGracePeriodSeconds: 10
       tolerations:
         - key: imperator.tenzen-y.io/compute-xlarge
           effect: NoSchedule

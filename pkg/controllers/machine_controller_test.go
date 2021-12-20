@@ -74,18 +74,36 @@ func updatePodContainerStatus(ctx context.Context, objKey client.ObjectKey, stat
 	// Update Pod Status
 	pod := &corev1.Pod{}
 	Expect(k8sClient.Get(ctx, objKey, pod)).NotTo(HaveOccurred())
+
+	now := metav1.Now()
+
 	switch status {
 	case "running":
 		pod.Status.Phase = corev1.PodRunning
+		pod.Status.Conditions = []corev1.PodCondition{{
+			Type:               corev1.ContainersReady,
+			Status:             corev1.ConditionTrue,
+			LastTransitionTime: now,
+		}}
 	case "creating":
 		pod.Status.Phase = corev1.PodPending
+		pod.Status.Conditions = []corev1.PodCondition{{
+			Type:               corev1.ContainersReady,
+			Status:             corev1.ConditionFalse,
+			LastTransitionTime: now,
+		}}
 	case "pending":
 		pod.Status.Phase = corev1.PodPending
-		pod.Status.Conditions = append(pod.Status.Conditions, corev1.PodCondition{
+		pod.Status.Conditions = []corev1.PodCondition{{
 			Type:               corev1.PodScheduled,
 			Status:             corev1.ConditionFalse,
 			Reason:             corev1.PodReasonUnschedulable,
-			LastTransitionTime: metav1.Now(),
+			LastTransitionTime: now,
+		}}
+		pod.Status.Conditions = append(pod.Status.Conditions, corev1.PodCondition{
+			Type:               corev1.ContainersReady,
+			Status:             corev1.ConditionFalse,
+			LastTransitionTime: now,
 		})
 	}
 

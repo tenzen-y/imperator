@@ -1,0 +1,4 @@
+namespace: guest-ns
+resources:
+  - ./namespace.yaml
+  - ./deployment.yaml

@@ -1,10 +1,7 @@
 package consts
 
 const (
-	ImperatorResourceInjectionKey     = "imperator.tenzen.io/inject-resource"
-	ImperatorResourceInjectionEnabled = "enabled"
-
-	ImperatorResourceInjectContainerNameKey = "imperator.tenzen-y.io/inject-resource"
+	ImperatorResourceInjectContainerNameKey = "imperator.tenzen-y.io/injecting-container"
 
 	PodResourceInjectorPath = "/mutate-core-v1-pod"
 )

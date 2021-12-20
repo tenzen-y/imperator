@@ -44,6 +44,19 @@ func (r *Machine) Default() {
 		}
 	}
 
+	// initialize machineAvailable
+	for _, mt := range r.Spec.MachineTypes {
+		r.Status.AvailableMachines = append(r.Status.AvailableMachines, AvailableMachineCondition{
+			Name: mt.Name,
+			Usage: UsageCondition{
+				Maximum:     mt.Available,
+				Reservation: 0,
+				Used:        0,
+				Waiting:     0,
+			},
+		})
+	}
+
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.

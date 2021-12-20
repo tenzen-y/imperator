@@ -1,0 +1,40 @@
+name: Go Tests
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17.x
+      -
+        name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      -
+        name: Check Go modules
+        run: |
+          set -eo pipefail
+          go mod tidy && git add go.*
+          git diff --cached --exit-code || (echo 'Please run "go mod tidy" to sync Go modules' && exit 1);
+      -
+        name: Check auto-generated codes
+        run: |
+          make check
+          git add -A
+          git diff --cached --exit-code || (echo 'Please run "make check" to generate manifests and codes' && exit 1);
+      -
+        name: Run Go test
+        run: make test

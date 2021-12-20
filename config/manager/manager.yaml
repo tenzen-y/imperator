@@ -26,10 +26,11 @@ spec:
         runAsNonRoot: true
       containers:
       - command:
-          - /manager
+          - /imperator
         args:
           - --leader-elect
         image: controller:latest
+        imagePullPolicy: IfNotPresent
         name: manager
         env:
           - name: IMPERATOR_CORE_NAMESPACE

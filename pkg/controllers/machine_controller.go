@@ -42,6 +42,7 @@ type MachineReconciler struct {
 //+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;watch
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -71,30 +72,33 @@ func (r *MachineReconciler) reconcile(ctx context.Context, machine *imperatorv1a
 
 	if err := r.reconcileMachineNodePool(ctx, machine); err != nil {
 		logger.Error(err, "failed to reconcile MachineNodePool", "name", machine.Name)
-		return r.updateReconcileFailedStatus(&machine.Status.Conditions, err)
+		return r.updateReconcileFailedStatus(ctx, machine, err)
 	}
 	if err := r.reconcileStatefulSet(ctx, machine); err != nil {
 		logger.Error(err, "failed to reconcile StatefulSet", "name", machine.Name)
-		return r.updateReconcileFailedStatus(&machine.Status.Conditions, err)
+		return r.updateReconcileFailedStatus(ctx, machine, err)
 	}
 
 	if err := r.reconcileService(ctx, machine); err != nil {
 		logger.Error(err, "failed to reconcile Service", "name", machine.Name)
-		return r.updateReconcileFailedStatus(&machine.Status.Conditions, err)
+		return r.updateReconcileFailedStatus(ctx, machine, err)
 	}
 
 	return r.updateStatus(ctx, machine)
 }
 
-func (r *MachineReconciler) updateReconcileFailedStatus(oldConditions *[]metav1.Condition, err error) (ctrl.Result, error) {
-	meta.SetStatusCondition(oldConditions, metav1.Condition{
+func (r *MachineReconciler) updateReconcileFailedStatus(ctx context.Context, machine *imperatorv1alpha1.Machine, reconcileErr error) (ctrl.Result, error) {
+	meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
 		Type:               imperatorv1alpha1.ConditionReady,
 		Status:             metav1.ConditionFalse,
 		LastTransitionTime: metav1.Now(),
 		Reason:             metav1.StatusFailure,
-		Message:            err.Error(),
+		Message:            reconcileErr.Error(),
 	})
-	return ctrl.Result{Requeue: true}, err
+	if err := r.Status().Update(ctx, machine, &client.UpdateOptions{}); err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	return ctrl.Result{}, nil
 }
 
 func (r *MachineReconciler) reconcileMachineNodePool(ctx context.Context, machine *imperatorv1alpha1.Machine) error {
@@ -129,6 +133,7 @@ func (r *MachineReconciler) reconcileMachineNodePool(ctx context.Context, machin
 		if _, exist := pool.Labels[consts.MachineGroupKey]; !exist {
 			pool.Labels[consts.MachineGroupKey] = machineGroup
 		}
+		pool.Spec.MachineGroupName = machineGroup
 
 		nodePoolSpec := machine.Spec.DeepCopy().NodePool
 		pool.Spec.NodePool = nodePoolSpec
@@ -259,7 +264,7 @@ func (r *MachineReconciler) reconcileService(ctx context.Context, machine *imper
 			continue
 		}
 		if opeResult == controllerutil.OperationResultUpdated {
-			logger.Info(fmt.Sprintf("updated Service machineType, %s", mt.Name))
+			logger.Info(fmt.Sprintf("machineType: %s; updated Service", mt.Name))
 		}
 	}
 	return nil
@@ -278,8 +283,8 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 
 	// if availableMachines is empty, create that
 	availableMachinesMap := make(map[string]bool)
-	for _, amt := range machine.Status.AvailableMachines {
-		availableMachinesMap[amt.Name] = true
+	for _, am := range machine.Status.AvailableMachines {
+		availableMachinesMap[am.Name] = true
 	}
 	for _, mt := range machine.Spec.MachineTypes {
 		if availableMachinesMap[mt.Name] {
@@ -327,12 +332,13 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 
 		machine.Status.AvailableMachines[idx].Usage.Reservation = 0
 		for _, po := range reservationPods.Items {
+			podConditionTypeMap := util.GetPodConditionTypeMap(po.Status.Conditions)
 			// Terminating
 			if po.ObjectMeta.DeletionTimestamp != nil {
 				continue
 			}
 			// Running
-			if po.Status.Phase == corev1.PodRunning {
+			if po.Status.Phase == corev1.PodRunning && podConditionTypeMap[corev1.ContainersReady].Status == corev1.ConditionTrue {
 				machine.Status.AvailableMachines[idx].Usage.Reservation++
 				// ContainerCreating
 			} else if po.Status.Phase == corev1.PodPending && po.Spec.NodeName != "" {
@@ -351,6 +357,15 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		machine.Status.AvailableMachines[idx].Usage.Used = 0
 		machine.Status.AvailableMachines[idx].Usage.Waiting = 0
 		for _, po := range guestPods.Items {
+
+			ns := &corev1.Namespace{}
+			if err := r.Get(ctx, client.ObjectKey{Name: po.Namespace}, ns); err != nil {
+				return ctrl.Result{}, err
+			}
+			if injectionLabel := ns.Labels[consts.ImperatorResourceInjectionKey]; injectionLabel != consts.ImperatorResourceInjectionEnabled {
+				continue
+			}
+
 			// Terminating
 			if !po.ObjectMeta.DeletionTimestamp.IsZero() {
 				continue
@@ -359,7 +374,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 			podConditionTypeMap := util.GetPodConditionTypeMap(po.Status.Conditions)
 
 			// Running
-			if po.Status.Phase == corev1.PodRunning {
+			if po.Status.Phase == corev1.PodRunning && podConditionTypeMap[corev1.ContainersReady].Status == corev1.ConditionTrue {
 				machine.Status.AvailableMachines[idx].Usage.Used++
 			} else if po.Status.Phase == corev1.PodPending {
 
@@ -394,7 +409,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		if err := r.Status().Update(ctx, machine, &client.UpdateOptions{}); err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
-		logger.Info(diff, "Machine", machine.Name)
+		logger.Info(diff)
 	}
 
 	return ctrl.Result{}, nil
@@ -417,13 +432,22 @@ func (r *MachineReconciler) podReconcileTrigger(o client.Object) []reconcile.Req
 }
 
 func (r *MachineReconciler) podReconcileRequest(o client.Object) []reconcile.Request {
+	// check namespace & PodRole
+	ns := &corev1.Namespace{}
+	if err := r.Get(context.Background(), client.ObjectKey{Name: o.GetNamespace()}, ns); err != nil {
+		return nil
+	}
+	injectionLabel := ns.Labels[consts.ImperatorResourceInjectionKey]
+
 	podLabels := o.GetLabels()
-	machineGroupName, exist := podLabels[consts.MachineGroupKey]
-	if !exist {
+	podRole := podLabels[consts.PodRoleKey]
+	if injectionLabel != consts.ImperatorResourceInjectionEnabled && podRole == consts.PodRoleGuest {
 		return nil
 	}
 
-	if podRole, exist := podLabels[consts.PodRoleKey]; !exist || podRole != consts.PodRoleGuest {
+	// check MachineGroup
+	machineGroupName, exist := podLabels[consts.MachineGroupKey]
+	if !exist {
 		return nil
 	}
 

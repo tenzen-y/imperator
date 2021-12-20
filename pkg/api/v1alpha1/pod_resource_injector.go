@@ -19,9 +19,7 @@ import (
 
 var priLogger = ctrl.Log.WithName("pod-resource-injector")
 
-//+kubebuilder:webhook:path=/mutate-core-v1-pod,mutating=true,failurePolicy=fail,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mutator.pod.imperator.tenzen-y.io,admissionReviewVersions={v1,v1beta1}
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list
-//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;update;patch;delete
+//+kubebuilder:webhook:path=/mutate-core-v1-pod,matchPolicy=equivalent,mutating=true,failurePolicy=fail,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mutator.pod.imperator.tenzen-y.io,admissionReviewVersions={v1,v1beta1}
 
 func NewResourceInjector(c client.Client) *resourceInjector {
 	return &resourceInjector{
@@ -42,21 +40,19 @@ func (r *resourceInjector) InjectDecoder(d *admission.Decoder) error {
 func (r *resourceInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
 	pod := &corev1.Pod{}
 	if err := r.decoder.Decode(req, pod); err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
-	}
-
-	requiredInjection, err := r.requiredInjection(ctx, pod)
-	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
 	// Inject resource to Pod
-	if requiredInjection {
+	if r.requiredInjection(pod) {
+
+		priLogger.Info(fmt.Sprintf("name: <%s>, namespace: <%s>; required injection", pod.Name, pod.Namespace))
+
 		if err := r.replacePods(ctx, pod); err != nil {
-			return admission.Errored(http.StatusInternalServerError, err)
+			return admission.Denied(err.Error())
 		}
-		if err = r.injectToPod(ctx, pod); err != nil {
-			return admission.Errored(http.StatusInternalServerError, err)
+		if err := r.injectToPod(ctx, pod); err != nil {
+			return admission.Denied(err.Error())
 		}
 	}
 
@@ -67,29 +63,19 @@ func (r *resourceInjector) Handle(ctx context.Context, req admission.Request) ad
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
-func (r *resourceInjector) requiredInjection(ctx context.Context, pod *corev1.Pod) (bool, error) {
-	// check namespace label
-	nsName := pod.Namespace
-	ns := &corev1.Namespace{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: nsName}, ns); err != nil {
-		return false, err
-	}
-	if injectRequired := ns.Labels[consts.ImperatorResourceInjectionKey]; injectRequired != consts.ImperatorResourceInjectionEnabled {
-		return false, nil
-	}
-
+func (r *resourceInjector) requiredInjection(pod *corev1.Pod) bool {
 	// check pod label
 	if _, exist := pod.Labels[commonconsts.MachineGroupKey]; !exist {
-		return false, nil
+		return false
 	}
 	if _, exist := pod.Labels[commonconsts.MachineTypeKey]; !exist {
-		return false, nil
+		return false
 	}
 	if role := pod.Labels[commonconsts.PodRoleKey]; role != commonconsts.PodRoleGuest {
-		return false, nil
+		return false
 	}
 
-	return true, nil
+	return true
 }
 
 func (r *resourceInjector) replacePods(ctx context.Context, pod *corev1.Pod) error {
@@ -101,7 +87,7 @@ func (r *resourceInjector) replacePods(ctx context.Context, pod *corev1.Pod) err
 	}
 	return fmt.Errorf("it is forbidden to update the Pod")
 
-	// TODO: Implementing replace pod
+	// TODO: Support to replace pod
 	//if len(oldPod.OwnerReferences) == 0 && os.Getenv("SKIP_OWNER_CHECK") != "true" {
 	//	return fmt.Errorf("name: %s, namespace: %s; pods that are not managed by the parent resource can not be updated",
 	//		oldPod.Name, oldPod.Namespace)
@@ -123,11 +109,17 @@ func (r *resourceInjector) injectToPod(ctx context.Context, pod *corev1.Pod) err
 	machineGroup := pod.Labels[commonconsts.MachineGroupKey]
 	machineTypeName := pod.Labels[commonconsts.MachineTypeKey]
 
-	targetMachineType, err := r.findMachineType(ctx, machineGroup, machineTypeName)
+	targetMachineType, machineTypeUsage, err := r.findMachineType(ctx, machineGroup, machineTypeName)
 	if err != nil {
 		return err
 	} else if targetMachineType == nil {
 		return fmt.Errorf("machine-group, <%s> does not have machine-type, <%s>", machineGroup, machineTypeName)
+	} else if machineTypeUsage == nil {
+		return fmt.Errorf("imperator controller is preparing")
+	}
+
+	if machineTypeUsage.Reservation == 0 {
+		return fmt.Errorf("name: <%s>, namespace: <%s>; there is no <%s> left", pod.Name, pod.Namespace, targetMachineType.Name)
 	}
 
 	// inject resources
@@ -144,28 +136,37 @@ func (r *resourceInjector) injectToPod(ctx context.Context, pod *corev1.Pod) err
 	return nil
 }
 
-func (r *resourceInjector) findMachineType(ctx context.Context, machineGroup, machineTypeName string) (*MachineType, error) {
+func (r *resourceInjector) findMachineType(ctx context.Context, machineGroup, machineTypeName string) (*MachineType, *UsageCondition, error) {
 	machines := &MachineList{}
 	if err := r.Client.List(ctx, machines, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			commonconsts.MachineGroupKey: machineGroup,
 		}),
 	}); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if len(machines.Items) == 0 {
-		return nil, fmt.Errorf("failed to find machine-group <%s>", machineGroup)
+		return nil, nil, fmt.Errorf("failed to find machine-group <%s>", machineGroup)
 	}
 
 	machineTypes := machines.Items[0].Spec.MachineTypes
+	var targetMachineType *MachineType
 	for _, mt := range machineTypes {
-		if mt.Name != machineTypeName {
-			continue
+		if mt.Name == machineTypeName {
+			targetMachineType = &mt
+			break
 		}
-		return &mt, nil
 	}
 
-	return nil, nil
+	var targetMachineStatus *UsageCondition
+	for _, mtStatus := range machines.Items[0].Status.AvailableMachines {
+		if mtStatus.Name == machineTypeName {
+			targetMachineStatus = &mtStatus.Usage
+			break
+		}
+	}
+
+	return targetMachineType, targetMachineStatus, nil
 }
 
 func findInjectingTargetContainerIndex(pod *corev1.Pod) int {
