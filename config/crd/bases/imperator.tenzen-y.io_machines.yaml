@@ -55,7 +55,11 @@ spec:
                           x-kubernetes-int-or-string: true
                         gpu:
                           properties:
-                            generation:
+                            family:
+                              description: nvidia.com/gpu.family
+                              type: string
+                            machine:
+                              description: nvidia.com/gpu.machine
                               type: string
                             num:
                               anyOf:
@@ -63,6 +67,9 @@ spec:
                               - type: string
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
+                            product:
+                              description: nvidia.com/gpu.product
+                              type: string
                             type:
                               description: ResourceName is the name identifying various
                                 resources in a ResourceList.

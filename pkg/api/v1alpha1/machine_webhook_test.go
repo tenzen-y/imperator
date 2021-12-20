@@ -78,9 +78,9 @@ func newFakeMachine() *Machine {
 						CPU:    resource.MustParse("2000m"),
 						Memory: resource.MustParse("12Gi"),
 						GPU: &GPUSpec{
-							Type:   "nvidia.com/gpu",
-							Num:    resource.MustParse("1"),
-							Family: "ampere",
+							Type:    "nvidia.com/gpu",
+							Num:     resource.MustParse("1"),
+							Product: "NVIDIA-GeForce-RTX-3090",
 						},
 					},
 					Available: 2,
@@ -131,11 +131,6 @@ var _ = Describe("Machine Webhook", func() {
 			kubeResources []client.Object
 			err           bool
 		}{
-			{
-				description: "All items are valid",
-				fakeMachine: newFakeMachine(),
-				err:         false,
-			},
 			{
 				description: fmt.Sprintf("Missing key, %s in labels", consts.MachineGroupKey),
 				fakeMachine: func() *Machine {
@@ -192,14 +187,25 @@ var _ = Describe("Machine Webhook", func() {
 				err: true,
 			},
 			{
-				description: "GPU generation must be set value",
+				description: "GPU family, product or machine must be set value",
 				fakeMachine: func() *Machine {
 					fakeMachine := newFakeMachine()
 					fakeMachine.Spec.MachineTypes[0].Spec.GPU.Family = ""
 					return fakeMachine
 				}(),
 				err: true,
-			}, {
+			},
+			{
+				description: "Only one GPU family, product or machine cane be set",
+				fakeMachine: func() *Machine {
+					fakeMachine := newFakeMachine()
+					fakeMachine.Spec.MachineTypes[1].Spec.GPU.Family = "ampere"
+					fakeMachine.Spec.MachineTypes[1].Spec.GPU.Machine = "DGX-1"
+					return fakeMachine
+				}(),
+				err: true,
+			},
+			{
 				description: "Support only one machineType in NodePool",
 				fakeMachine: func() *Machine {
 					fakeMachine := newFakeMachine()
@@ -222,7 +228,7 @@ var _ = Describe("Machine Webhook", func() {
 				err: true,
 			},
 			{
-				description: "Duplicated machineType name",
+				description: "MachineType name is duplicated",
 				fakeMachine: func() *Machine {
 					fakeMachine := newFakeMachine()
 					duplicatedMachineType := fakeMachine.Spec.MachineTypes[0]
