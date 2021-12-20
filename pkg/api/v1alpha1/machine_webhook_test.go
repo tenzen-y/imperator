@@ -124,7 +124,7 @@ var _ = Describe("Machine Webhook", func() {
 		Expect(k8sClient.Delete(ctx, fakeMachine, &client.DeleteOptions{})).NotTo(HaveOccurred())
 	})
 
-	It("Failed to create Machine resource", func() {
+	It("Create Machine resource", func() {
 		testCases := []struct {
 			description   string
 			fakeMachine   *Machine
@@ -199,10 +199,51 @@ var _ = Describe("Machine Webhook", func() {
 					return fakeMachine
 				}(),
 				err: true,
+			}, {
+				description: "Support only one machineType in NodePool",
+				fakeMachine: func() *Machine {
+					fakeMachine := newFakeMachine()
+					fakeMachine.Spec.NodePool[0].MachineType = append(fakeMachine.Spec.NodePool[0].MachineType, NodePoolMachineType{
+						Name: "test-machine2",
+					})
+					return fakeMachine
+				}(),
+				err: true,
+			},
+			{
+				description: "Failed to find machineType using in nodePool",
+				fakeMachine: func() *Machine {
+					fakeMachine := newFakeMachine()
+					fakeMachine.Spec.NodePool[0].MachineType = []NodePoolMachineType{{
+						Name: "missing-machine",
+					}}
+					return fakeMachine
+				}(),
+				err: true,
+			},
+			{
+				description: "Duplicated machineType name",
+				fakeMachine: func() *Machine {
+					fakeMachine := newFakeMachine()
+					duplicatedMachineType := fakeMachine.Spec.MachineTypes[0]
+					fakeMachine.Spec.MachineTypes = append(fakeMachine.Spec.MachineTypes, duplicatedMachineType)
+					return fakeMachine
+				}(),
+				err: true,
+			},
+			{
+				description: "Not specified GPU",
+				fakeMachine: func() *Machine {
+					fakeMachine := newFakeMachine()
+					fakeMachine.Spec.MachineTypes[1].Spec.GPU = nil
+					return fakeMachine
+				}(),
+				err: false,
 			},
 		}
 
 		for _, test := range testCases {
+			By(test.description)
 			if len(test.kubeResources) > 0 {
 				for _, o := range test.kubeResources {
 					Expect(k8sClient.Create(ctx, o, &client.CreateOptions{})).NotTo(HaveOccurred(), test.description)
@@ -210,14 +251,14 @@ var _ = Describe("Machine Webhook", func() {
 			}
 			err := k8sClient.Create(ctx, test.fakeMachine, &client.CreateOptions{})
 			if test.err {
-				Expect(err).To(HaveOccurred(), test.description)
+				Expect(err).To(HaveOccurred())
 			} else {
-				Expect(err).NotTo(HaveOccurred(), test.description)
+				Expect(err).NotTo(HaveOccurred())
 			}
-			Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred(), test.description)
+			Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
 			if len(test.kubeResources) > 0 {
 				for _, o := range test.kubeResources {
-					Expect(k8sClient.DeleteAllOf(ctx, o, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred(), test.description)
+					Expect(k8sClient.DeleteAllOf(ctx, o, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
 				}
 			}
 		}
