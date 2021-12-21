@@ -37,7 +37,7 @@ jobs:
         run: make docker-build
       -
         name: Load imperator image
-        run: minikube image load ghcr.io/tenzen-y/imperator:latest
+        run: minikube image load ghcr.io/tenzen-y/imperator/imperator-controller:latest
       -
         name: Install tools
         run: |
