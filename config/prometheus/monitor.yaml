@@ -1,12 +1,8 @@
-
 # Prometheus Monitor Service (Metrics)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  labels:
-    control-plane: controller-manager
-  name: controller-manager-metrics-monitor
-  namespace: system
+  name: metrics-monitor
 spec:
   endpoints:
     - path: /metrics
@@ -17,4 +13,4 @@ spec:
         insecureSkipVerify: true
   selector:
     matchLabels:
-      control-plane: controller-manager
+      app.kubernetes.io/name: imperator

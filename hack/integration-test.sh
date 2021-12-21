@@ -11,8 +11,10 @@ TIMEOUT=5m
 function setup() {
   # Setup impelator
   echo "Setup imperator"
+
+  yq eval -i '.spec.template.spec.containers[0].imagePullPolicy|="IfNotPresent"' ../config/manager/manager.yaml
   kustomize build ../config/crd | kubectl apply -f -
-  kustomize build ../config/default/overlays/dev | kubectl apply -f -
+  kustomize build ../config/default | kubectl apply -f -
   kubectl wait pods -n ${IMPERATOR_CORE_NAMESPACE} --for condition=ready --timeout=${TIMEOUT} -l app.kubernetes.io/name=imperator
   kubectl get pods -n ${IMPERATOR_CORE_NAMESPACE}
   sleep 5

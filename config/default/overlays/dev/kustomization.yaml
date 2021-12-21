@@ -1,4 +1,0 @@
-resources:
-  - ../../base
-patchesStrategicMerge:
-  - ./manager_patch.yaml

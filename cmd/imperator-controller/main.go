@@ -48,7 +48,7 @@ func init() {
 }
 
 func initFlags() {
-	pflag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	pflag.StringVar(&metricsAddr, "metrics-bind-address", "127.0.0.1:8080", "The address the metric endpoint binds to.")
 	pflag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	pflag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
