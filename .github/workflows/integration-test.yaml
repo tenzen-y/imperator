@@ -3,8 +3,6 @@ on:
   push:
     tags:
       - v*
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -36,10 +34,10 @@ jobs:
           kubectl get nodes
       -
         name: Build imperator
-        run: docker build -t ghcr.io/tenzen-y/imperator:dev -f cmd/imperator/Dockerfile --build-arg VERSION=dev .
+        run: make docker-build
       -
         name: Load imperator image
-        run: minikube image load ghcr.io/tenzen-y/imperator:dev
+        run: minikube image load ghcr.io/tenzen-y/imperator:latest
       -
         name: Install tools
         run: |

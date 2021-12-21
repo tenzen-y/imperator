@@ -16,13 +16,13 @@ COPY pkg pkg/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -a -o imperator cmd/imperator/main.go
+    go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -a -o imperator-controller cmd/imperator-controller/main.go
 
 # Use distroless as minimal base image to package the imperator binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/imperator .
+COPY --from=builder /workspace/imperator-controller .
 USER 65532:65532
 
-ENTRYPOINT ["/imperator"]
+ENTRYPOINT ["/imperator-controller"]

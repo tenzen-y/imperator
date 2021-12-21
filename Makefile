@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= dev
+VERSION ?= latest
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
@@ -53,6 +53,9 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: check
+check: manifests generate fmt vet golangci-lint bundle-manifests
+
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
@@ -60,6 +63,10 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+.PHONY: bundle-manifests
+bundle-manifests:
+	kustomize build config/default  > deploy/imperator.yaml
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -76,29 +83,26 @@ ifeq ("$(shell golangci-lint version 2>/dev/null)", "")
 endif
 	golangci-lint run ./... --timeout 3m
 
-.PHONY: check
-check: manifests generate fmt vet golangci-lint
-
 .PHONY: test
 test: envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.tmp.out
-	@awk '!/.*zz_generated.deepcopy.go.*/' cover.tmp.out > cover.out
-	@rm -f cover.tmp.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out.tmp
+	@awk '!/.*zz_generated.deepcopy.go.*/' cover.out.tmp > cover.out
+	@rm -f cover.out.tmp
 	go tool cover -func cover.out
 
 ##@ Build
 
 .PHONY: build
 build: generate fmt vet ## Build imperator binary.
-	go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -o bin/imperator cmd/imperator/main.go
+	go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -o bin/imperator cmd/imperator-controller/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./cmd/imperator/main.go
+	go run ./cmd/imperator-controller/main.go
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the imperator.
-	docker build -t ${IMG} --build-arg VERSION=${VERSION} -f cmd/imperator/Dockerfile .
+	docker build -t ${IMG} --build-arg VERSION=${VERSION} -f cmd/imperator-controller/Dockerfile .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the imperator.
@@ -121,7 +125,7 @@ deploy: manifests ## Deploy controller to the K8s cluster specified in ~/.kube/c
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	kustomize build config/default/overlays/dev | kubectl delete -f -
+	kustomize build config/default | kubectl delete -f -
 
 .PHONY: kind-start
 kind-start:

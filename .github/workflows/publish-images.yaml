@@ -1,0 +1,32 @@
+name: builds
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish-image:
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        name: checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.github_token }}
+      -
+        name: Publish imperator image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: cmd/imperator-controller/Dockerfile
+          push: true
+          tags: ghcr.io/tenzen-y/imperator:latest
+          build-args: |
+            VERSION=latest
