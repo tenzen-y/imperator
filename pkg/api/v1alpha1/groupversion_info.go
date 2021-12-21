@@ -1,5 +1,5 @@
 // Package v1alpha1 contains API Schema definitions for the imperator v1alpha1 API group
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 //+groupName=imperator.tenzen-y.io
 package v1alpha1
 

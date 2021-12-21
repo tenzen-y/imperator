@@ -34,15 +34,15 @@ type MachineReconciler struct {
 	Recorder record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machines/finalizers,verbs=update
-//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;watch
-//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
+// +kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;watch
+// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -416,8 +416,10 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *MachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	podHandler := handler.EnqueueRequestsFromMapFunc(r.podReconcileTrigger)
+func (r *MachineReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+	podHandler := handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+		return r.podReconcileRequest(ctx, o)
+	})
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imperatorv1alpha1.Machine{}).
@@ -427,14 +429,10 @@ func (r *MachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *MachineReconciler) podReconcileTrigger(o client.Object) []reconcile.Request {
-	return r.podReconcileRequest(o)
-}
-
-func (r *MachineReconciler) podReconcileRequest(o client.Object) []reconcile.Request {
+func (r *MachineReconciler) podReconcileRequest(ctx context.Context, o client.Object) []reconcile.Request {
 	// check namespace & PodRole
 	ns := &corev1.Namespace{}
-	if err := r.Get(context.Background(), client.ObjectKey{Name: o.GetNamespace()}, ns); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: o.GetNamespace()}, ns); err != nil {
 		return nil
 	}
 	injectionLabel := ns.Labels[consts.ImperatorResourceInjectionKey]
@@ -452,7 +450,7 @@ func (r *MachineReconciler) podReconcileRequest(o client.Object) []reconcile.Req
 	}
 
 	machines := &imperatorv1alpha1.MachineList{}
-	if err := r.List(context.Background(), machines, &client.ListOptions{
+	if err := r.List(ctx, machines, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			consts.MachineGroupKey: machineGroupName,
 		}),

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -10,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
@@ -19,7 +19,7 @@ import (
 
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 	"github.com/tenzen-y/imperator/pkg/consts"
-	//+kubebuilder:scaffold:imports
+	// +kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -59,7 +59,7 @@ var _ = BeforeSuite(func() {
 	err = clientgoscheme.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())

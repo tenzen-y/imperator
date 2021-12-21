@@ -35,12 +35,12 @@ type MachineNodePoolReconciler struct {
 	Recorder record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=core,resources=nodes/status,verbs=get;list;watch
-//+kubebuilder:rbac:groups=core,resources=events,verbs=create;update;patch
+// +kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=imperator.tenzen-y.io,resources=machinenodepools/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=core,resources=nodes/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;update;patch
 
 // Reconcile is main function for reconciliation loop
 func (r *MachineNodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -386,8 +386,10 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *MachineNodePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	nodeHandler := handler.EnqueueRequestsFromMapFunc(r.nodeReconcileTrigger)
+func (r *MachineNodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+	nodeHandler := handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+		return r.nodeReconcileRequest(ctx, o)
+	})
 
 	nodePredicates := predicate.Funcs{
 		CreateFunc: func(createEvent event.CreateEvent) bool {
@@ -424,13 +426,9 @@ func (r *MachineNodePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *MachineNodePoolReconciler) nodeReconcileTrigger(o client.Object) []reconcile.Request {
-	return r.nodeReconcileRequest(o)
-}
-
-func (r *MachineNodePoolReconciler) nodeReconcileRequest(o client.Object) []reconcile.Request {
+func (r *MachineNodePoolReconciler) nodeReconcileRequest(ctx context.Context, o client.Object) []reconcile.Request {
 	pools := &imperatorv1alpha1.MachineNodePoolList{}
-	if err := r.List(context.Background(), pools, &client.ListOptions{}); err != nil {
+	if err := r.List(ctx, pools, &client.ListOptions{}); err != nil {
 		return nil
 	}
 

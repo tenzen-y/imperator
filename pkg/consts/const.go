@@ -1,10 +1,11 @@
 package consts
 
 import (
+	"time"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	appsv1 "k8s.io/api/apps/v1"
-	"time"
 )
 
 const (
@@ -30,6 +31,9 @@ const (
 
 	ImperatorResourceInjectionKey     = "imperator.tenzen.io/inject-resource"
 	ImperatorResourceInjectionEnabled = "enabled"
+
+	ImperatorResourceInjectContainerNameKey = "imperator.tenzen-y.io/injecting-container"
+	PodResourceInjectorPath                 = "/mutate-core-v1-pod"
 )
 
 var (

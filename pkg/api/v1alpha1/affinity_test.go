@@ -1,9 +1,11 @@
 package v1alpha1
 
 import (
-	"github.com/google/go-cmp/cmp"
-	"github.com/tenzen-y/imperator/pkg/consts"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/tenzen-y/imperator/pkg/consts"
 )
 
 func TestGetGPUSelector(t *testing.T) {
