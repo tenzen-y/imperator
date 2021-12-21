@@ -27,6 +27,6 @@ jobs:
           context: .
           file: cmd/imperator-controller/Dockerfile
           push: true
-          tags: ghcr.io/tenzen-y/imperator:latest
+          tags: ghcr.io/tenzen-y/imperator/imperator-controller:latest
           build-args: |
             VERSION=latest

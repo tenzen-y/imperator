@@ -10,7 +10,7 @@ VERSION ?= latest
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # tenzen-y.io/imperator-bundle:$VERSION and tenzen-y.io/imperator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= ghcr.io/tenzen-y/imperator
+IMAGE_TAG_BASE ?= ghcr.io/tenzen-y/imperator/imperator-controller
 
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
@@ -94,7 +94,7 @@ test: envtest ## Run tests.
 
 .PHONY: build
 build: generate fmt vet ## Build imperator binary.
-	go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -o bin/imperator cmd/imperator-controller/main.go
+	go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -o bin/imperator-controller cmd/imperator-controller/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
