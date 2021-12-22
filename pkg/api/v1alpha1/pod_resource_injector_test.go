@@ -45,10 +45,10 @@ func updateUsageConditions() {
 		machine.Status.AvailableMachines = append(machine.Status.AvailableMachines, AvailableMachineCondition{
 			Name: mt.Name,
 			Usage: UsageCondition{
-				Maximum:     mt.Available,
-				Reservation: mt.Available,
-				Used:        0,
-				Waiting:     0,
+				Maximum:  mt.Available,
+				Reserved: mt.Available,
+				Used:     0,
+				Waiting:  0,
 			},
 		})
 	}

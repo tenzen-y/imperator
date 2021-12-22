@@ -119,7 +119,7 @@ func (r *resourceInjector) injectToPod(ctx context.Context, pod *corev1.Pod) err
 		return fmt.Errorf("imperator controller is preparing")
 	}
 
-	if machineTypeUsage.Reservation == 0 {
+	if machineTypeUsage.Reserved == 0 {
 		return fmt.Errorf("name: <%s>, namespace: <%s>; there is no <%s> left", pod.Name, pod.Namespace, targetMachineType.Name)
 	}
 

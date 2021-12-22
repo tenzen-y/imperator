@@ -138,7 +138,7 @@ spec:
                           format: int32
                           minimum: 0
                           type: integer
-                        reservation:
+                        reserved:
                           format: int32
                           minimum: 0
                           type: integer
@@ -152,7 +152,7 @@ spec:
                           type: integer
                       required:
                       - maximum
-                      - reservation
+                      - reserved
                       - used
                       - waiting
                       type: object

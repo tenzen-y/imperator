@@ -51,10 +51,10 @@ func (r *Machine) Default() {
 		r.Status.AvailableMachines = append(r.Status.AvailableMachines, AvailableMachineCondition{
 			Name: mt.Name,
 			Usage: UsageCondition{
-				Maximum:     mt.Available,
-				Reservation: 0,
-				Used:        0,
-				Waiting:     0,
+				Maximum:  mt.Available,
+				Reserved: 0,
+				Used:     0,
+				Waiting:  0,
 			},
 		})
 	}

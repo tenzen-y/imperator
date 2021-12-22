@@ -93,7 +93,7 @@ type UsageCondition struct {
 
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum:=0
-	Reservation int32 `json:"reservation"`
+	Reserved int32 `json:"reserved"`
 
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum:=0

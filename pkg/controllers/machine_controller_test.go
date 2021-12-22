@@ -322,10 +322,10 @@ var _ = Describe("machine controller envtest", func() {
 
 			// Check Machine Status
 			checkMachineAvailableStatus(ctx, mt.Name, gstruct.Fields{
-				"Used":        Equal(int32(0)),
-				"Maximum":     Equal(mt.Available),
-				"Reservation": Equal(mt.Available),
-				"Waiting":     Equal(int32(0)),
+				"Used":     Equal(int32(0)),
+				"Maximum":  Equal(mt.Available),
+				"Reserved": Equal(mt.Available),
+				"Waiting":  Equal(int32(0)),
 			})
 		}
 
@@ -361,10 +361,10 @@ var _ = Describe("machine controller envtest", func() {
 
 		// Check Machine Status
 		checkMachineAvailableStatus(ctx, testMachine2, gstruct.Fields{
-			"Used":        Equal(int32(0)),
-			"Maximum":     Equal(testMachine2MachineAvailable),
-			"Reservation": Equal(testMachine2MachineAvailable - 1),
-			"Waiting":     Equal(int32(1)),
+			"Used":     Equal(int32(0)),
+			"Maximum":  Equal(testMachine2MachineAvailable),
+			"Reserved": Equal(testMachine2MachineAvailable - 1),
+			"Waiting":  Equal(int32(1)),
 		})
 
 		// Update Status of Guest Pod to Running
@@ -375,10 +375,10 @@ var _ = Describe("machine controller envtest", func() {
 
 		// Check Machine Status
 		checkMachineAvailableStatus(ctx, testMachine2, gstruct.Fields{
-			"Used":        Equal(int32(1)),
-			"Maximum":     Equal(testMachine2MachineAvailable),
-			"Reservation": Equal(testMachine2MachineAvailable - 1),
-			"Waiting":     Equal(int32(0)),
+			"Used":     Equal(int32(1)),
+			"Maximum":  Equal(testMachine2MachineAvailable),
+			"Reserved": Equal(testMachine2MachineAvailable - 1),
+			"Waiting":  Equal(int32(0)),
 		})
 
 		// Delete Guest Pod
@@ -404,10 +404,10 @@ var _ = Describe("machine controller envtest", func() {
 
 		// Check Machine Status
 		checkMachineAvailableStatus(ctx, testMachine2, gstruct.Fields{
-			"Used":        Equal(int32(0)),
-			"Maximum":     Equal(testMachine2MachineAvailable),
-			"Reservation": Equal(testMachine2MachineAvailable),
-			"Waiting":     Equal(int32(0)),
+			"Used":     Equal(int32(0)),
+			"Maximum":  Equal(testMachine2MachineAvailable),
+			"Reserved": Equal(testMachine2MachineAvailable),
+			"Waiting":  Equal(int32(0)),
 		})
 	})
 })
