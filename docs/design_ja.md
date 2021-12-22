@@ -262,19 +262,19 @@ status:
     - name: compute-medium
       usage:
         maximum: 4
-        reservation: 3
+        reserved: 3
         used: 1
         waiting: 0
     - name: compute-xlarge
       usage:
         maximum: 1
-        reservation: 1
+        reserved: 1
         used: 0
         waiting: 0
     - name: compute-large
       usage:
         maximum: 2
-        reservation: 1
+        reserved: 1
         used: 1
         waiting: 1
 ```

@@ -200,10 +200,10 @@ func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *i
 		}
 		opeResult, err := ctrl.CreateOrUpdate(ctx, r.Client, sts, func() error {
 			origin = sts.DeepCopy()
-			stsReplica := usage.Reservation - (usage.Used + usage.Waiting)
+			stsReplica := usage.Reserved - (usage.Used + usage.Waiting)
 			if stsReplica < 0 {
 				stsReplica = 0
-			} else if stsReplica == 0 && usage.Reservation == 0 {
+			} else if stsReplica == 0 && usage.Reserved == 0 {
 				stsReplica = usage.Maximum
 			}
 			util.GenerateStatefulSet(&mt, machineGroup, stsReplica, sts)
@@ -293,10 +293,10 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		machine.Status.AvailableMachines = append(machine.Status.AvailableMachines, imperatorv1alpha1.AvailableMachineCondition{
 			Name: mt.Name,
 			Usage: imperatorv1alpha1.UsageCondition{
-				Maximum:     mt.Available,
-				Reservation: 0,
-				Used:        0,
-				Waiting:     0,
+				Maximum:  mt.Available,
+				Reserved: 0,
+				Used:     0,
+				Waiting:  0,
 			},
 		})
 	}
@@ -330,7 +330,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 			return ctrl.Result{}, err
 		}
 
-		machine.Status.AvailableMachines[idx].Usage.Reservation = 0
+		machine.Status.AvailableMachines[idx].Usage.Reserved = 0
 		for _, po := range reservationPods.Items {
 			podConditionTypeMap := util.GetPodConditionTypeMap(po.Status.Conditions)
 			// Terminating
@@ -339,10 +339,10 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 			}
 			// Running
 			if po.Status.Phase == corev1.PodRunning && podConditionTypeMap[corev1.ContainersReady].Status == corev1.ConditionTrue {
-				machine.Status.AvailableMachines[idx].Usage.Reservation++
+				machine.Status.AvailableMachines[idx].Usage.Reserved++
 				// ContainerCreating
 			} else if po.Status.Phase == corev1.PodPending && po.Spec.NodeName != "" {
-				machine.Status.AvailableMachines[idx].Usage.Reservation++
+				machine.Status.AvailableMachines[idx].Usage.Reserved++
 			}
 		}
 
