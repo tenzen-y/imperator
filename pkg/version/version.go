@@ -16,4 +16,29 @@ limitations under the License.
 
 package version
 
-var Version = "latest"
+// From: https://github.com/kubernetes/client-go/blob/782ff783b635df54ddf44d55f3bd3e48eb4dcb9a/pkg/version/version.go
+
+import (
+	"fmt"
+	"runtime"
+
+	apimachineryversion "k8s.io/apimachinery/pkg/version"
+)
+
+// Get returns the overall codebase version. It's for detecting
+// what code a binary was built from.
+func Get() apimachineryversion.Info {
+	// These variables typically come from -ldflags settings and in
+	// their absence fallback to the settings in pkg/version/base.go
+	return apimachineryversion.Info{
+		Major:        gitMajor,
+		Minor:        gitMinor,
+		GitVersion:   gitVersion,
+		GitCommit:    gitCommit,
+		GitTreeState: gitTreeState,
+		BuildDate:    buildDate,
+		GoVersion:    runtime.Version(),
+		Compiler:     runtime.Compiler,
+		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+	}
+}

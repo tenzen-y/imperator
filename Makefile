@@ -1,19 +1,12 @@
-# VERSION defines the project version for the bundle.
-# Update this value when you upgrade the version of your project.
-# To re-generate a bundle for another specific version without changing the standard setup, you can:
-# - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
-# - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= latest
+LDFLAGS := $(shell hack/version.sh)
 
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
-#
-# For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# tenzen-y.io/imperator-bundle:$VERSION and tenzen-y.io/imperator-catalog:$VERSION.
 IMAGE_TAG_BASE ?= ghcr.io/tenzen-y/imperator/imperator-controller
+IMAGE_TAG_VERSION ?= latest
 
 # Image URL to use all building/pushing image targets
-IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
+IMG ?= $(IMAGE_TAG_BASE):$(IMAGE_TAG_VERSION)
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -62,7 +55,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate/boilerplate.go.txt" paths="./..."
 
 .PHONY: bundle-manifests
 bundle-manifests:
@@ -94,7 +87,7 @@ test: envtest ## Run tests.
 
 .PHONY: build
 build: generate fmt vet ## Build imperator binary.
-	go build -ldflags "-X github.com/tenzen-y/imperator/pkg/version.Version=${VERSION}" -o bin/imperator-controller cmd/imperator-controller/main.go
+	go build -ldflags $(LDFLAGS) -o bin/imperator-controller cmd/imperator-controller/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -102,7 +95,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the imperator.
-	docker build -t ${IMG} --build-arg VERSION=${VERSION} -f cmd/imperator-controller/Dockerfile .
+	docker build -t ${IMG} -f cmd/imperator-controller/Dockerfile .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the imperator.

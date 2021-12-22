@@ -36,5 +36,17 @@ jobs:
         with:
           fetch-depth: 1
       -
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.github_token }}
+      -
         name: Build imperator image
-        run: make docker-build
+        run: |
+          make docker-build
+          git_branch_name="${GITHUB_REF#refs/heads/}"
+          if [ "$git_branch_name" = "master" ]; then \
+            make docker-push;
+          fi;
