@@ -17,7 +17,7 @@
 cd "$(dirname "$0")"
 set -eox pipefail
 
-CLUSTER_TYPE=${1:-KinD}
+CLUSTER_TYPE=${1:-KIND}
 IMPERATOR_CORE_NAMESPACE=imperator-system
 GUEST_NAMESPACE=guest-ns
 GUEST_POD_LABELS="imperator.tenzen-y.io/machine-group=general-machine,imperator.tenzen-y.io/machine-type=compute-small,imperator.tenzen-y.io/pod-role=guest,imperator.tenzen-y.io/inject-resource=guest-container"
@@ -37,9 +37,9 @@ function setup() {
   # Deploy Machine
   echo "Deploy Machine"
   if [ "${CLUSTER_TYPE}" = 'minikube' ]; then \
-    yq eval -i '.spec.nodePool[0].name|="minikube"' ../examples/general-machine.yaml
+    yq eval -i '.spec.nodePool[0].name|="minikube"' ../examples/machine/general-machine.yaml
   fi;
-  kubectl apply -f ../examples/general-machine.yaml
+  kubectl apply -f ../examples/machine/general-machine.yaml
   kubectl get machines
   kubectl get pods -n ${IMPERATOR_CORE_NAMESPACE}
   kubectl describe machines general-machine
@@ -90,9 +90,9 @@ function _get_actual_resources() {
 function _get_desired_resources() {
   resource_type=$1
   if [ "$resource_type" = "cpu" ]; then \
-    yq eval '.spec.machineTypes[0].spec.cpu' ../examples/general-machine.yaml;
+    yq eval '.spec.machineTypes[0].spec.cpu' ../examples/machine/general-machine.yaml;
   elif [ "$resource_type" = "memory" ]; then \
-    yq eval '.spec.machineTypes[0].spec.memory' ../examples/general-machine.yaml;
+    yq eval '.spec.machineTypes[0].spec.memory' ../examples/machine/general-machine.yaml;
   else \
     echo "can not get desired resources, <$resource_type>"
     exit 1
