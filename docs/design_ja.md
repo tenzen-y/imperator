@@ -240,7 +240,7 @@ spec:
         cpu: 40000m
         memory: 128Gi
         gpu: #omitempty
-          type: nvidia.com/gpu # Support only GPUs made by Nvidia 
+          type: nvidia.com/gpu # Support only GPUs made by Nvidia
           num: 2
           product: "NVIDIA-GeForce-RTX-3090"
       available: 1
@@ -254,7 +254,7 @@ spec:
           family: ampere
       available: 2
 status:
-  condition:
+  conditions:
     - lastTransitionTime: "2021-07-24T09:08:39Z"
       status: "True"
       type: Ready
@@ -315,7 +315,7 @@ spec:
     - name: compute-large
     - name: compute-medium
 status:
-  condition:
+  conditions:
     - lastTransitionTime: "2021-07-24T09:08:39Z"
       status: "True"
       type: Ready

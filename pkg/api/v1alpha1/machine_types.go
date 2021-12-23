@@ -86,7 +86,7 @@ type GPUSpec struct {
 type MachineStatus struct {
 
 	// +optional
-	Conditions []metav1.Condition `json:"condition,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// +kubebuilder:validation:Required
 	AvailableMachines []AvailableMachineCondition `json:"availableMachines,omitempty"`
@@ -123,6 +123,8 @@ type UsageCondition struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="Group",type="string",JSONPath=`.metadata.labels['imperator\.tenzen-y\.io/machine-group']`
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=`.status.conditions[?(@.type=='Ready')].status`
 
 // Machine is the Schema for the machines API
 type Machine struct {

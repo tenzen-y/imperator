@@ -62,7 +62,7 @@ $ kubectl get nodes --show-labels kind-control-plane
 NAME                 STATUS   ROLES                  AGE     VERSION   LABELS
 kind-control-plane   Ready    control-plane,master   9m57s   v1.21.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,imperator.tenzen-y.io/compute-small=general-machine,imperator.tenzen-y.io/node-pool=ready,kubernetes.io/arch=amd64,kubernetes.io/hostname=kind-control-plane,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node-role.kubernetes.io/master=,node.kubernetes.io/exclude-from-external-load-balancers=
 $ ###
-$ # you will find a container to reserve resource for `compute-small`. 
+$ # you will find a container to reserve resources for `compute-small`. 
 $ kubectl get pods -n imperator-system
 NAME                                   READY   STATUS    RESTARTS   AGE
 general-machine-compute-small-0        1/1     Running   0          94s

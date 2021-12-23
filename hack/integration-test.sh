@@ -40,7 +40,7 @@ function setup() {
     yq eval -i '.spec.nodePool[0].name|="minikube"' ../examples/machine/general-machine.yaml
   fi;
   kubectl apply -f ../examples/machine/general-machine.yaml
-  kubectl get machines
+  kubectl get machines.imperator.tenzen-y.io,machinenodepools.imperator.tenzen-y.io
   kubectl get pods -n ${IMPERATOR_CORE_NAMESPACE}
   kubectl describe machines general-machine
 }

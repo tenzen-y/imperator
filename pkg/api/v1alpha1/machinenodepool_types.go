@@ -81,7 +81,7 @@ type NodePoolMachineTypeStock struct {
 type MachineNodePoolStatus struct {
 
 	// +optional
-	Conditions []metav1.Condition `json:"condition,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// +optional
 	NodePoolCondition []NodePoolCondition `json:"nodePool,omitempty"`
@@ -113,8 +113,8 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
-// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
-// +kubebuilder:printcolumn:name="Group",type="string",JSONPath=".spec.machineGroup"
+// +kubebuilder:printcolumn:name="Group",type="string",JSONPath=`.spec.machineGroupName`
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=`.status.conditions[?(@.type=='Ready')].status`
 
 // MachineNodePool is the Schema for the machinenodepools API
 type MachineNodePool struct {
