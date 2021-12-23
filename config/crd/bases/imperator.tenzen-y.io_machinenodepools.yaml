@@ -17,11 +17,11 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.machineGroupName
+      name: Group
+      type: string
     - jsonPath: .status.conditions[?(@.type=='Ready')].status
       name: Ready
-      type: string
-    - jsonPath: .spec.machineGroup
-      name: Group
       type: string
     name: v1alpha1
     schema:
@@ -93,7 +93,7 @@ spec:
           status:
             description: MachineNodePoolStatus defines the observed state of MachineNodePool
             properties:
-              condition:
+              conditions:
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
