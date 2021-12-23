@@ -137,6 +137,10 @@ func (r *Machine) ValidateLabel() error {
 		return err
 	}
 
+	if len(machines.Items) == 0 {
+		return nil
+	}
+
 	for _, m := range machines.Items {
 		if m.Name != r.Name {
 			return fmt.Errorf("machineGroup label is duplicate, machineGroup must be set as unique")

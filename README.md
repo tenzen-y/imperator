@@ -8,7 +8,7 @@ Imperator is Kubernetes Custom Controller to provide virtual resource groups.
 - [cert-manager](https://cert-manager.io/) >= v1.0 
 - [kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/) >= v4.0.5
 - [NVIDIA/GPU feature discovery](https://github.com/NVIDIA/gpu-feature-discovery) >= v0.3.0
-(optional, if you are using NVIDIA GPU on your Kubernetes Cluster.)
+(optional: If you are using some NVIDIA GPUs on your Kubernetes Cluster, you must install this.)
 
 ## Getting Started
 [Here](https://github.com/tenzen-y/imperator/tree/master/examples) you will find some examples.
