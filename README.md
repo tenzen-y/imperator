@@ -1,3 +1,14 @@
-# imperator
+# Imperator
 
-Provide virtual resource group to stateful applications.
+## Overview
+Imperator is Kubernetes Custom Controller to provide virtual resource groups.
+
+## Prerequisites
+- [Kubernetes](https://kubernetes.io/) >= v1.20
+- [cert-manager](https://cert-manager.io/) >= v1.0 
+- [kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/) >= v4.0.5
+- [NVIDIA/GPU feature discovery](https://github.com/NVIDIA/gpu-feature-discovery) >= v0.3.0
+(optional, if you are using NVIDIA GPU on your Kubernetes Cluster.)
+
+## Getting Started
+[Here](https://github.com/tenzen-y/imperator/tree/master/examples) you will find some examples.
