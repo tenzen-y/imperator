@@ -1,0 +1,23 @@
+apiVersion: imperator.tenzen-y.io/v1alpha1
+kind: Machine
+metadata:
+  name: machine-with-gpus
+  labels:
+    imperator.tenzen-y.io/machine-group: gpu-machines
+spec:
+  nodePool:
+    - name: kind-control-plane
+      mode: ready
+      taint: false # omitempty;default=false
+      machineType:
+        - name: compute-xmedium # Support only a machineType in first release
+  machineTypes:
+    - name: compute-xmedium
+      spec:
+        cpu: 4000m
+        memory: 12Gi
+        gpu: #omitempty
+          type: nvidia.com/gpu
+          num: 1
+          family: ampere
+      available: 1
