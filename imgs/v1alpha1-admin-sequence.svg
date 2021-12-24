@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="664px" preserveAspectRatio="none" style="width:1009px;height:664px;background:#FFFFFF;" version="1.1" viewBox="0 0 1009 664" width="1009px" zoomAndPan="magnify"><defs><filter height="300%" id="f6x3ahxv38zec" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="87.9316" style="stroke:#A80036;stroke-width:1.0;" width="10" x="56.5" y="88.2871"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="498.2793" style="stroke:#A80036;stroke-width:1.0;" width="10" x="197.5" y="88.2871"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="29.3105" style="stroke:#A80036;stroke-width:1.0;" width="10" x="330.5" y="117.5977"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="29.3105" style="stroke:#A80036;stroke-width:1.0;" width="10" x="516.5" y="205.5293"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="205.1738" style="stroke:#A80036;stroke-width:1.0;" width="10" x="516.5" y="381.3926"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="87.9316" style="stroke:#A80036;stroke-width:1.0;" width="10" x="923.5" y="264.1504"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="61" x2="61" y1="56.9766" y2="604.5664"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="202" x2="202" y1="56.9766" y2="604.5664"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="335" x2="335" y1="56.9766" y2="604.5664"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="521" x2="521" y1="56.9766" y2="604.5664"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="928" x2="928" y1="56.9766" y2="604.5664"/><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="30.4883" style="stroke:#A80036;stroke-width:1.5;" width="109" x="5" y="21.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="95" x="12" y="42.0234">Administrator</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="30.4883" style="stroke:#A80036;stroke-width:1.5;" width="109" x="5" y="603.5664"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="95" x="12" y="624.1016">Administrator</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="75" x="163" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="61" x="170" y="25.5352">Kube API</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43" x="181" y="42.0234">Server</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="75" x="163" y="603.5664"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="61" x="170" y="624.1016">Kube API</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43" x="181" y="640.5898">Server</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="81" x="293" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57" x="305" y="25.5352">Machine</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="63" x="304" y="42.0234">webhook</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="81" x="293" y="603.5664"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57" x="305" y="624.1016">Machine</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="63" x="304" y="640.5898">webhook</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="85" x="477" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57" x="491" y="25.5352">Machine</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="67" x="488" y="42.0234">controller</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="85" x="477" y="603.5664"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57" x="491" y="624.1016">Machine</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="67" x="488" y="640.5898">controller</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="137" x="858" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="123" x="865" y="25.5352">MachineNodePool</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="67" x="895" y="42.0234">controller</text><rect fill="#FEFECE" filter="url(#f6x3ahxv38zec)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="137" x="858" y="603.5664"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="123" x="865" y="624.1016">MachineNodePool</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="67" x="895" y="640.5898">controller</text><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="87.9316" style="stroke:#A80036;stroke-width:1.0;" width="10" x="56.5" y="88.2871"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="498.2793" style="stroke:#A80036;stroke-width:1.0;" width="10" x="197.5" y="88.2871"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="29.3105" style="stroke:#A80036;stroke-width:1.0;" width="10" x="330.5" y="117.5977"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="29.3105" style="stroke:#A80036;stroke-width:1.0;" width="10" x="516.5" y="205.5293"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="205.1738" style="stroke:#A80036;stroke-width:1.0;" width="10" x="516.5" y="381.3926"/><rect fill="#FFFFFF" filter="url(#f6x3ahxv38zec)" height="87.9316" style="stroke:#A80036;stroke-width:1.0;" width="10" x="923.5" y="264.1504"/><polygon fill="#A80036" points="185.5,84.2871,195.5,88.2871,185.5,92.2871,189.5,88.2871" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="66.5" x2="191.5" y1="88.2871" y2="88.2871"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="117" x="73.5" y="83.5449">Create Machine CR</text><polygon fill="#A80036" points="318.5,113.5977,328.5,117.5977,318.5,121.5977,322.5,117.5977" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="207.5" x2="324.5" y1="117.5977" y2="117.5977"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="104" x="214.5" y="112.8555">New Machine CR</text><polygon fill="#A80036" points="218.5,142.9082,208.5,146.9082,218.5,150.9082,214.5,146.9082" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="212.5" x2="334.5" y1="146.9082" y2="146.9082"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="98" x="224.5" y="142.166">Webhook result</text><polygon fill="#A80036" points="72.5,172.2188,62.5,176.2188,72.5,180.2188,68.5,176.2188" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="66.5" x2="196.5" y1="176.2188" y2="176.2188"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36" x="78.5" y="171.4766">result</text><polygon fill="#A80036" points="504.5,201.5293,514.5,205.5293,504.5,209.5293,508.5,205.5293" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="207.5" x2="510.5" y1="205.5293" y2="205.5293"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="104" x="214.5" y="200.7871">New Machine CR</text><polygon fill="#A80036" points="218.5,230.8398,208.5,234.8398,218.5,238.8398,214.5,234.8398" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="212.5" x2="520.5" y1="234.8398" y2="234.8398"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="177" x="224.5" y="230.0977">Create MachineNodePool CR</text><polygon fill="#A80036" points="911.5,260.1504,921.5,264.1504,911.5,268.1504,915.5,264.1504" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="207.5" x2="917.5" y1="264.1504" y2="264.1504"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="164" x="214.5" y="259.4082">New MachineNodePool CR</text><polygon fill="#A80036" points="218.5,289.4609,208.5,293.4609,218.5,297.4609,214.5,293.4609" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="212.5" x2="922.5" y1="293.4609" y2="293.4609"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="416" x="224.5" y="288.7188">set Annotation, `imperator.tenzen-y.io/machine-group` to node.</text><polygon fill="#A80036" points="218.5,318.7715,208.5,322.7715,218.5,326.7715,214.5,322.7715" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="212.5" x2="922.5" y1="322.7715" y2="322.7715"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="692" x="224.5" y="318.0293">set Label , `imperator.tenzen-y.io/nodePool` and `imperator.tenzen-y.io/&lt;MACHINE_TYPE_NAME&gt;` to node</text><polygon fill="#A80036" points="218.5,348.082,208.5,352.082,218.5,356.082,214.5,352.082" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="212.5" x2="927.5" y1="352.082" y2="352.082"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="687" x="224.5" y="347.3398">set Taint, `imperator.tenzen-y.io/nodePool` and `imperator.tenzen-y.io/&lt;MACHINE_TYPE_NAME&gt;` to node</text><polygon fill="#A80036" points="504.5,377.3926,514.5,381.3926,504.5,385.3926,508.5,381.3926" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="207.5" x2="510.5" y1="381.3926" y2="381.3926"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="290" x="214.5" y="376.6504">Updated the Nodes contained in the NodePool</text><polygon fill="#A80036" points="218.5,406.7031,208.5,410.7031,218.5,414.7031,214.5,410.7031" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="212.5" x2="515.5" y1="410.7031" y2="410.7031"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="259" x="224.5" y="405.9609">Get the Nodes contained in the NodePool</text><polygon fill="#A80036" points="504.5,436.0137,514.5,440.0137,504.5,444.0137,508.5,440.0137" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="207.5" x2="510.5" y1="440.0137" y2="440.0137"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="113" x="214.5" y="435.2715">NodePool is ready</text><polygon fill="#A80036" points="218.5,465.3242,208.5,469.3242,218.5,473.3242,214.5,469.3242" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="212.5" x2="515.5" y1="469.3242" y2="469.3242"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="263" x="224.5" y="464.582">Create Reservation StatefulSet and Service</text><polygon fill="#A80036" points="504.5,494.6348,514.5,498.6348,504.5,502.6348,508.5,498.6348" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="207.5" x2="510.5" y1="498.6348" y2="498.6348"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="206" x="214.5" y="493.8926">Created Pod to reserve resources</text><polygon fill="#A80036" points="218.5,523.9453,208.5,527.9453,218.5,531.9453,214.5,527.9453" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="212.5" x2="515.5" y1="527.9453" y2="527.9453"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="210" x="224.5" y="523.2031">Get the Pods to reserve resources</text><polygon fill="#A80036" points="504.5,553.2559,514.5,557.2559,504.5,561.2559,508.5,557.2559" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="207.5" x2="510.5" y1="557.2559" y2="557.2559"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="153" x="214.5" y="552.5137">Reservation Pod is ready</text><polygon fill="#A80036" points="213.5,582.5664,203.5,586.5664,213.5,590.5664,209.5,586.5664" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="207.5" x2="520.5" y1="586.5664" y2="586.5664"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="164" x="219.5" y="581.8242">Update Machine CR Status</text><!--MD5=[5dcad48a99fda7a7feb3782119d4e515]
+@startuml
+'https://plantuml.com/sequence-diagram
+
+participant "Administrator" as User order 1
+participant "Kube API\n Server" as APIServer order 2
+participant "Machine\n webhook" as MachineWebhook order 3
+participant "Machine\n controller" as MachineController order 4
+participant "MachineNodePool\n controller" as MachineNodePoolController order 5
+
+User -> APIServer: Create Machine CR
+activate User
+activate APIServer
+
+APIServer - -> MachineWebhook: New Machine CR
+activate MachineWebhook
+
+MachineWebhook - -> APIServer: Webhook result
+deactivate MachineWebhook
+
+APIServer -> User: result
+deactivate User
+
+APIServer - -> MachineController: New Machine CR
+activate MachineController
+
+MachineController - -> APIServer: Create MachineNodePool CR
+
+deactivate MachineController
+
+APIServer - -> MachineNodePoolController: New MachineNodePool CR
+activate MachineNodePoolController
+
+MachineNodePoolController - -> APIServer: set Annotation, `imperator.tenzen-y.io/machine-group` to node.
+MachineNodePoolController - -> APIServer: set Label , `imperator.tenzen-y.io/nodePool` and `imperator.tenzen-y.io/<MACHINE_TYPE_NAME>` to node
+MachineNodePoolController - -> APIServer: set Taint, `imperator.tenzen-y.io/nodePool` and `imperator.tenzen-y.io/<MACHINE_TYPE_NAME>` to node
+
+deactivate MachineNodePoolController
+
+APIServer - -> MachineController: Updated the Nodes contained in the NodePool
+activate MachineController
+MachineController - -> APIServer: Get the Nodes contained in the NodePool
+APIServer - -> MachineController: NodePool is ready
+MachineController - -> APIServer: Create Reservation StatefulSet and Service
+APIServer - -> MachineController: Created Pod to reserve resources
+MachineController - -> APIServer: Get the Pods to reserve resources
+APIServer - -> MachineController: Reservation Pod is ready
+MachineController - -> APIServer: Update Machine CR Status
+
+deactivate MachineController
+
+deactivate APIServer
+
+@enduml
+
+@startuml
+
+participant "Administrator" as User order 1
+participant "Kube API\n Server" as APIServer order 2
+participant "Machine\n webhook" as MachineWebhook order 3
+participant "Machine\n controller" as MachineController order 4
+participant "MachineNodePool\n controller" as MachineNodePoolController order 5
+
+User -> APIServer: Create Machine CR
+activate User
+activate APIServer
+
+APIServer - -> MachineWebhook: New Machine CR
+activate MachineWebhook
+
+MachineWebhook - -> APIServer: Webhook result
+deactivate MachineWebhook
+
+APIServer -> User: result
+deactivate User
+
+APIServer - -> MachineController: New Machine CR
+activate MachineController
+
+MachineController - -> APIServer: Create MachineNodePool CR
+
+deactivate MachineController
+
+APIServer - -> MachineNodePoolController: New MachineNodePool CR
+activate MachineNodePoolController
+
+MachineNodePoolController - -> APIServer: set Annotation, `imperator.tenzen-y.io/machine-group` to node.
+MachineNodePoolController - -> APIServer: set Label , `imperator.tenzen-y.io/nodePool` and `imperator.tenzen-y.io/<MACHINE_TYPE_NAME>` to node
+MachineNodePoolController - -> APIServer: set Taint, `imperator.tenzen-y.io/nodePool` and `imperator.tenzen-y.io/<MACHINE_TYPE_NAME>` to node
+
+deactivate MachineNodePoolController
+
+APIServer - -> MachineController: Updated the Nodes contained in the NodePool
+activate MachineController
+MachineController - -> APIServer: Get the Nodes contained in the NodePool
+APIServer - -> MachineController: NodePool is ready
+MachineController - -> APIServer: Create Reservation StatefulSet and Service
+APIServer - -> MachineController: Created Pod to reserve resources
+MachineController - -> APIServer: Get the Pods to reserve resources
+APIServer - -> MachineController: Reservation Pod is ready
+MachineController - -> APIServer: Update Machine CR Status
+
+deactivate MachineController
+
+deactivate APIServer
+
+@enduml
+
+PlantUML version 1.2021.15(Wed Dec 01 01:45:34 JST 2021)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: ja
+Country: JP
+--></g></svg>

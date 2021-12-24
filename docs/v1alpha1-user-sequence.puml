@@ -1,0 +1,34 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+participant "User" as User order 1
+participant "Kube API\n Server" as APIServer order 2
+participant "Pod Resource\nInjector" as PodInjector order 3
+participant "Machine\n controller" as MachineController order 4
+
+User -> APIServer: Create Pod
+activate User
+activate APIServer
+
+APIServer --> PodInjector: New Pod
+activate PodInjector
+PodInjector --> APIServer: Inject Container Resources, nodeAffinity and Toleration to Pod
+PodInjector --> APIServer: Webhook result
+deactivate PodInjector
+
+APIServer -> User: result
+deactivate User
+
+APIServer --> MachineController: Created Guest Pod
+activate MachineController
+MachineController --> APIServer: Update Machine CR Status
+APIServer --> MachineController: Updated Machine CR Status
+MachineController --> APIServer: Scale down StatefulSet to reserve resources
+APIServer --> MachineController: Deleted Pod to reserve resources
+MachineController --> APIServer: Update Machine CR Status
+APIServer --> MachineController: Started Guest Pod
+MachineController --> APIServer: Update Machine CR Status
+
+deactivate APIServer
+
+@enduml

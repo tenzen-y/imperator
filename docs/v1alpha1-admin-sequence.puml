@@ -1,0 +1,53 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+participant "Administrator" as User order 1
+participant "Kube API\n Server" as APIServer order 2
+participant "Machine\n webhook" as MachineWebhook order 3
+participant "Machine\n controller" as MachineController order 4
+participant "MachineNodePool\n controller" as MachineNodePoolController order 5
+
+User -> APIServer: Create Machine CR
+activate User
+activate APIServer
+
+APIServer --> MachineWebhook: New Machine CR
+activate MachineWebhook
+
+MachineWebhook --> APIServer: Webhook result
+deactivate MachineWebhook
+
+APIServer -> User: result
+deactivate User
+
+APIServer --> MachineController: New Machine CR
+activate MachineController
+
+MachineController --> APIServer: Create MachineNodePool CR
+
+deactivate MachineController
+
+APIServer --> MachineNodePoolController: New MachineNodePool CR
+activate MachineNodePoolController
+
+MachineNodePoolController --> APIServer: set Annotation, `imperator.tenzen-y.io/machine-group` to node.
+MachineNodePoolController --> APIServer: set Label , `imperator.tenzen-y.io/nodePool` and `imperator.tenzen-y.io/<MACHINE_TYPE_NAME>` to node
+MachineNodePoolController --> APIServer: set Taint, `imperator.tenzen-y.io/nodePool` and `imperator.tenzen-y.io/<MACHINE_TYPE_NAME>` to node
+
+deactivate MachineNodePoolController
+
+APIServer --> MachineController: Updated the Nodes contained in the NodePool
+activate MachineController
+MachineController --> APIServer: Get the Nodes contained in the NodePool
+APIServer --> MachineController: NodePool is ready
+MachineController --> APIServer: Create Reservation StatefulSet and Service
+APIServer --> MachineController: Created Pod to reserve resources
+MachineController --> APIServer: Get the Pods to reserve resources
+APIServer --> MachineController: Reservation Pod is ready
+MachineController --> APIServer: Update Machine CR Status
+
+deactivate MachineController
+
+deactivate APIServer
+
+@enduml
