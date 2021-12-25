@@ -1,204 +1,106 @@
-# imperator v1alpha
+# imperator v1alpha1
 design document for imperator v1alpha1.
 
 ## Goal
-Provide virtual resource group to applications.
+仮想的なリソースグループをコンテナアプリケーションへ提供する．
 
 ## Overview
 
-Imperator は Kubernetes Operator Pattern の controller で，2 つの controller が動作しています．
+Imperator は `Machine Controller`， `MachineNodePool Controller`， `Pod Resource Injector` の 3 つの主要コンポーネントから構成された
+Kubernetes Operator である．
 
-1. Machine Controller: 主に計算リソース確保のための StatefulSet の作成と，
-`imperator.tenzen-y.io/machine` のラベルが付与されたゲスト Pod の数量管理を行います．
+1. `Machine Controller` (Custom Controller): 
+   - 計算リソース予約のための StatefulSet および Service の作成する．
+   - Guest Pod と Reservation Pod の数量管理を行う．
 
-2. MachineNodePool controller: 各 MachineType にどの Node を割り当てるかの管理と Node の健康状態による使用可否を管理します．
+2. `MachineNodePool controller` (Custom Controller:
+   - Node の健康状態による使用可否を管理する．
+   - NodePool に定義された Node へ MachineType などの Label，Annotation，Taint をセットする．
 
-3. Pod Resource Injector: Pod に machineType のラベルがついている Pod のコンテナに resource の指定を行います．
+3. `Pod Resource Injector` (Admission Mutating Webhooks):
+   - Imperator 管理下の Guest Pod のコンテナへ resource，nodeAffinity，taint を付与する．
 
 Note: v1alpha1 では 1 つの Node を複数の Machine グループに参加させることはできない．
 
-## controller の設計
-Machine CR の作成後， MachineLearning CR 作成後までのシーケンス図は以下のようになっている．
+## Labels，Annotations，Taints，Toleration フォーマット
 
-![シーケンス図](./v1alpha1-sequence.png)
+- Labels
 
-### Pod Resource Injector
-`imperator.tenzen.io/inject-resource: enabled` のラベルがついた namespace のみ resource を注入する．
-デフォルトでは，index が 0 のコンテナにリソースを注入するが，ラベルに `imperator.tenzen-y.io/inject-resource` があった場合そのコンテナに注入する．
+|                     Key                     | Description of Value  | Values                                           | Resources                                                                                                                         |
+|:-------------------------------------------:|:---------------------:|:-------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------|
+|    `imperator.tenzen-y.io/machine-group`    | Name of Machine Group | <li> `general-machine` <li> et al.               | <li> Guest Pod <li> Machine CR <li> MachineNodePool CR <li> Reservation StatefulSet <li> Reservation Service <li> Reservation Pod |
+|    `imperator.tenzen-y.io/machine-type`     | Name of Machine Type  | <li> `compute-xlarge` <li> et al.                | <li> Guest Pod <li> Node <li> Reservation StatefulSet <li> Reservation Service <li> Reservation Pod                               |
+|      `imperator.tenzen-y.io/pod-role`       |       Pod Role        | <li> `reservation` <li> `guest`                  | <li> Guest Pod <li> Reservation StatefulSet <li> Reservation Service <li> Reservation Pod                                         |
+|      `imperator.tenzen-y.io/nodePool`       |      Node Health      | <li> `ready` <li> `not-ready` <li> `maintenance` | <li> Node                                                                                                                         |
+| `imperator.tenzen-y.io/<MACHINE_TYPE_NAME>` | Name of Machine Group | <li> `general-machine` <li> et al.               | <li> Node                                                                                                                         |
+
+- Annotations
+
+|                  Key                  | Description of Value  | Values                             | Resources |
+|:-------------------------------------:|:---------------------:|:-----------------------------------|:----------|
+| `imperator.tenzen-y.io/machine-group` | Name of Machine Group | <li> `general-machine` <li> et al. | <li> Node |
+
+- Taints and Toleration
+
+|                     Key                     | Description of Value  | Values                                           | Resources                                                                    |   Effect   |
+|:-------------------------------------------:|:---------------------:|:-------------------------------------------------|:-----------------------------------------------------------------------------|:----------:|
+|      `imperator.tenzen-y.io/nodePool`       |      Node Health      | <li> `ready` <li> `not-ready` <li> `maintenance` | <li> Node <li> Guest Pod <li> Reservation StatefulSet <li> Reservation Pod   | NoSchedule |
+| `imperator.tenzen-y.io/<MACHINE_TYPE_NAME>` | Name of Machine Group | <li> `general-machine` <li> et al.               | <li> Node <li> Guest Pod <li> Reservation StatefulSet <li> Reservation Pod   | NoSchedule |
+
+## Custom Controller の設計
+
+- 管理者のワークフロー例
+
+![管理者のワークフロー例](../imgs/v1alpha1-admin-sequence.svg)
+
+- ユーザのワークフロー例
+
+![ユーザのワークフロー例](../imgs/v1alpha1-user-sequence.svg)
 
 ### Machine controller
 
-machine の数量管理では，Pod リソースを監視する．
-- Pod label に `imperator.tenzen-y.io/machine` がついている物をスクレイプする．
-  また，スクレイプしてきた中で 以下の条件に合致する物を稼働中としてカウントする．
-    - Running: `.status.containerStatuses.state.Running` が nil ではない場合．
-    - ContainerCreating: `.status.containerStatuses.state.waiting` が nil ではないかつ，
-      `.status.containerStatuses.state.waiting.reason` が `Error` ではない場合．
-    - Terminating: `.metadata.deletionTimestamp` が nil ではない場合．
+- 計算リソース予約のための StatefulSet および Service の作成する．
+- Guest Pod と Reservation Pod の数量管理を行う．
 
-作成される StatefulSet 及び Service は以下のような物になる．
+#### Work Queue への追加条件
 
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: compute-xlarge-general-machine # <Machine Type>-<Machine Group>
-  labels:
-    imperator.tenzen-y.io/machine-group: general-machine
-    imperator.tenzen-y.io/machine-type: compute-xlarge
-    imperator.tenzen-y.io/pod-role: reservation
-spec:
-  selector:
-    imperator.tenzen-y.io/machine-group: general-machine
-    imperator.tenzen-y.io/machine-type: compute-xlarge
-    imperator.tenzen-y.io/pod-role: reservation
-  type: ClusterIP
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: compute-xlarge-general-machine # <Machine Type>-<Machine Group>
-  labels:
-    imperator.tenzen-y.io/machine-group: general-machine
-    imperator.tenzen-y.io/machine-type: compute-xlarge
-    imperator.tenzen-y.io/pod-role: reservation
-spec:
-  selector:
-    matchLabels:
-      imperator.tenzen-y.io/machine-group: general-machine
-      imperator.tenzen-y.io/machine-type: compute-xlarge
-      imperator.tenzen-y.io/pod-role: reservation
-  serviceName: compute-xlarge.general-machine # <Machine Type>.<Machine Group>
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        imperator.tenzen-y.io/machine-group: general-machine
-        imperator.tenzen-y.io/machine-type: compute-xlarge
-        imperator.tenzen-y.io/pod-role: reservation
-    spec:
-      tolerations:
-        - key: imperator.tenzen-y.io/compute-xlarge
-          effect: NoSchedule
-          operator: Equal
-          value: general-machine
-        - key: imperator.tenzen-y.io/node-pool
-          effect: NoSchedule
-          operator: Equal
-          value: ready
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: imperator.tenzen-y.io/compute-xlarge
-                    operator: In
-                    values:
-                      - general-machine
-                  - key: imperator.tenzen-y.io/node-pool
-                    operator: In
-                    values:
-                      - ready
-                  - key: nvidia.com/gpu.family
-                    operator: In
-                    values:
-                      - ampere
-      containers:
-      - name: sleeper
-        image: alpine:3.15.0
-        command: ["sleep"]
-        args: ["infinity"]
-        resources:
-          requests:
-            cpu: "40000m"
-            memory: "128Gi"
-            nvidia.com/gpu: "2"
-          limits:
-            cpu: "40000m"
-            memory: "128Gi"
-            nvidia.com/gpu: "2"
-```
+1. Machine CR に変化があった時
+2. MachineNodePool CR に変化があった時
+3. Owner が Machine CR である StatefulSet に変化があった時
+4. Guest Pod もしくは Reservation Pod に変化があった時
 
-ゲスト Pod
+#### machineType の数量管理
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: guest-deployment
-  labels:
-    imperator.tenzen-y.io/machine-group: general-machine
-    imperator.tenzen-y.io/machine-type: compute-xlarge
-    imperator.tenzen-y.io/pod-role: guest
-    imperator.tenzen-y.io/injecting-container: training-container
-spec:
-  selector:
-    matchLabels:
-      imperator.tenzen-y.io/machine-group: general-machine
-      imperator.tenzen-y.io/machine-type: compute-xlarge
-      imperator.tenzen-y.io/pod-role: guest
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        imperator.tenzen-y.io/machine-group: general-machine
-        imperator.tenzen-y.io/machine-type: compute-xlarge
-        imperator.tenzen-y.io/pod-role: guest
-    spec:
-      tolerations:
-        - key: imperator.tenzen-y.io/compute-xlarge
-          effect: NoSchedule
-          operator: Equal
-          value: general-machine
-        - key: imperator.tenzen-y.io/node-pool
-          effect: NoSchedule
-          operator: Equal
-          value: ready
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: imperator.tenzen-y.io/compute-xlarge
-                    operator: In
-                    values:
-                      - general-machine
-                  - key: imperator.tenzen-y.io/node-pool
-                    operator: In
-                    values:
-                      - ready
-                  - key: nvidia.com/gpu.family
-                    operator: In
-                    values:
-                      - ampere
-      containers:
-        - name: training-container
-          image: nvidia/cuda:11.4.2-devel-ubuntu20.04
-          command: [ "sh", "-c" ]
-          args: [ "python", "train.py" ]
-          resources:
-            requests:
-              cpu: "40000m"
-              memory: "128Gi"
-              nvidia.com/gpu: "2"
-            limits:
-              cpu: "40000m"
-              memory: "128Gi"
-              nvidia.com/gpu: "2"
-```
+- 各 machineType には以下の 4 つの状態が存在する．
+  - `Maximum`: Machine CR で設定された machineType の最大使用可能数 
+  - `Reserved`: 実際に展開されて，Running または ContainerCreating である Reservation Pod の数
+  - `Used`: 実際に展開されて，Running または ContainerCreating である Guest Pod の数
+  - `Waiting`: まだ Node へスケージュールされていない Guest Pod の数
 
-### NodePool controller
-- Node の Annotation　に `imperator.tenzen-y.io/machine-group=グループ名` を付与する．
-- nodePool の mode が ready のノードに `imperator.tenzen-y.io/nodePool=ready` のラベルをつける．
-  nodePool に無いノードもしくは， mode が `ready` ではなくなったノードや status が `not-ready` では無くなったノードからはラベルを削除する．
-- status の nodePool 欄 condition は，定期的に node を監視し，健康状態に応じて変更する．
+- Pod が各状態である条件
+  - `Running`:
+    - `.metadata.deletionTimestamp` が存在しない．
+    - `.status.phase` が `Running`
+    - `.status.Conditions[*]` に `{Type: "ContainersReady", Status: "True"}` がある．
+  - `ContainerCreating`
+    - `.metadata.deletionTimestamp` が存在しない．
+    - `.status.phase` が `Running`
+    - `.status.Conditions[*]` に `{Type: "ContainersReady", Status: "False"}` がある．
+  - `Deleting`
+    - `.metadata.deletionTimestamp` が存在する．
+  - `UnScheduled`
+    - `.metadata.deletionTimestamp` が存在しない．
+    - `.status.phase` が `Pending`
+    - `.status.Conditions[*]` に `{Type: PodScheduled, "Status": "False"}` がある．
+    - `.status.Conditions[*]` に `{Type: ContainersReady, "Status": "False"}` がある．
+    - `spec.nodeName` が空である．
 
-## Custom Resource Schema
+#### Machine リソース
 
-### Machine リソース
-
-- spec.machineTypes[*].spec.hostLimit は，対象のマシン 1 つでホストリソースの何割まで消費することができるかの制限をつける．
-- spec.machineTypes[*].spec.dependence は，親リソースを指定し，その親リソースの何割のリソースを使用するかを .availableRatio に記述する．
+Note:
+- `.spec.nodePool[*].machineType` で複数の `machineType` はサポートしない．
+- `.spec.nodePool[*].taint` はデフォルトで `false`
+- `.spec.machineTypes[*].spec.gpu.type` は NVIDIA 製 GPU のみサポートする．
 
 ```yaml
 ---
@@ -214,17 +116,17 @@ spec:
       mode: ready
       taint: true # omitempty;default=false
       machineType:
-        - name: compute-xlarge # Support only a machineType in first release
+        - name: compute-xlarge # Support only one machineType in first release
     - name: utaha
       mode: maintenance
       taint: false # omitempty;default=false
       machineType:
-        - name: compute-medium # Support only a machineType in first release
+        - name: compute-medium # Support only one machineType in first release
     - name: eriri
       mode: ready
       taint: true # omitempty;default=false
       machineType:
-        - name: compute-medium # Support only a machineType in first release
+        - name: compute-medium # Support only one machineType in first release
   machineTypes:
     - name: compute-medium
       spec:
@@ -279,10 +181,173 @@ status:
         waiting: 1
 ```
 
-### MachineNodePool リソース
+#### Reservation StatefulSet and Service
 
-- .metadata.name は ownerReference を参照し，`.metadata.name-node-pool` にする．
-- spec　は machine リソースから持ってくる．
+命名規則: <Machine Type>-<Machine Group>
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: compute-xlarge-general-machine # <Machine Type>-<Machine Group>
+  labels:
+    imperator.tenzen-y.io/machine-group: general-machine
+    imperator.tenzen-y.io/machine-type: compute-xlarge
+    imperator.tenzen-y.io/pod-role: reservation
+spec:
+  selector:
+    imperator.tenzen-y.io/machine-group: general-machine
+    imperator.tenzen-y.io/machine-type: compute-xlarge
+    imperator.tenzen-y.io/pod-role: reservation
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: compute-xlarge-general-machine # <Machine Type>-<Machine Group>
+  labels:
+    imperator.tenzen-y.io/machine-group: general-machine
+    imperator.tenzen-y.io/machine-type: compute-xlarge
+    imperator.tenzen-y.io/pod-role: reservation
+spec:
+  selector:
+    matchLabels:
+      imperator.tenzen-y.io/machine-group: general-machine
+      imperator.tenzen-y.io/machine-type: compute-xlarge
+      imperator.tenzen-y.io/pod-role: reservation
+  serviceName: compute-xlarge.general-machine # <Machine Type>-<Machine Group>
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        imperator.tenzen-y.io/machine-group: general-machine
+        imperator.tenzen-y.io/machine-type: compute-xlarge
+        imperator.tenzen-y.io/pod-role: reservation
+    spec:
+      tolerations:
+        - key: imperator.tenzen-y.io/compute-xlarge
+          effect: NoSchedule
+          operator: Equal
+          value: general-machine
+        - key: imperator.tenzen-y.io/node-pool
+          effect: NoSchedule
+          operator: Equal
+          value: ready
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: imperator.tenzen-y.io/compute-xlarge
+                    operator: In
+                    values:
+                      - general-machine
+                  - key: imperator.tenzen-y.io/node-pool
+                    operator: In
+                    values:
+                      - ready
+                  - key: nvidia.com/gpu.family
+                    operator: In
+                    values:
+                      - ampere
+      containers:
+      - name: sleeper
+        image: alpine:3.15.0
+        command: ["sleep"]
+        args: ["infinity"]
+        resources:
+          requests:
+            cpu: "40000m"
+            memory: "128Gi"
+            nvidia.com/gpu: "2"
+          limits:
+            cpu: "40000m"
+            memory: "128Gi"
+            nvidia.com/gpu: "2"
+```
+
+#### Guest Pod
+
+- Guest Pod に必須のラベル
+  - key: `imperator.tenzen-y.io/machine-group`
+    value: `*`
+    description: 使用する machineType が属している machine-group の名前
+  - key: `imperator.tenzen-y.io/machine-type`
+    value: `*`
+    description: 使用する machineType の名前
+  - key: `imperator.tenzen-y.io/pod-role`
+    value: `guest`
+    description: Pod の役割
+
+- Guest Pod のオプションのラベル
+  - key: `imperator.tenzen-y.io/injecting-container`
+    value: `*`
+    description: リソースを挿入したいコンテナの名前（デフォルトは 0 個目のコンテナ）
+    
+Note: Pod を直接作るのではなく，Deployment などを使って間接的に作る場合は，必ず `spec.template.metadata` にラベルをつける必要がある．
+Deployment などの `.metadata.labels` につけても正常に動作しない．
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guest-deployment
+spec:
+  selector:
+    matchLabels:
+      imperator.tenzen-y.io/machine-group: general-machine
+      imperator.tenzen-y.io/machine-type: compute-xlarge
+      imperator.tenzen-y.io/pod-role: guest
+      imperator.tenzen-y.io/injecting-container: training-container
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        imperator.tenzen-y.io/machine-group: general-machine
+        imperator.tenzen-y.io/machine-type: compute-xlarge
+        imperator.tenzen-y.io/pod-role: guest
+        imperator.tenzen-y.io/injecting-container: training-container
+    spec:
+      containers:
+        - name: training-container
+          image: nvidia/cuda:11.4.2-devel-ubuntu20.04
+          command: [ "sh", "-c" ]
+          args: [ "python", "train.py" ]
+```
+
+### NodePool controller
+
+- Node の Annotation　に `imperator.tenzen-y.io/machine-group=<MACHINE_GROUP_NAME>` を付与する．
+- nodePool の mode が ready のノードに `imperator.tenzen-y.io/nodePool=ready` のラベルをつける．
+  nodePool に無いノードもしくは， mode が `ready` ではなくなったノードや status が `not-ready` では無くなったノードからはラベルを削除する．
+- status の nodePool 欄 conditions は，定期的に node を監視し，健康状態に応じて変更する．
+
+#### Work Queue への追加条件
+
+1. MachineNodePool CR に変化があった時
+2. Annotation に `imperator.tenzen-y.io/machine-group=<MACHINE_GROUP_NAME>` がついている Node で
+Label，Annotation, Taint のいずれかが更新された時．
+
+#### Node condition の管理
+
+- 各 Node condition の条件
+  - `NotReady`:
+    - Taint に Key が以下の物が含まれている．
+      - `node.kubernetes.io/not-ready`
+      - `node.kubernetes.io/unschedulable`
+      - `node.kubernetes.io/network-unavailable`
+      - `node.kubernetes.io/unreachable`
+  - `Maintenance`:
+    - MachineNodePool CR の `.spec.nodePool[*].mode` で `maintenance` が設定されている．
+  - `Ready`:
+    - `Maintenance` の条件を満たさない．
+    - `NotReady` の条件を満たさない．
+
+#### MachineNodePool リソース
+
+Note:
+- `.metadata.name` は ownerReference を参照し，`<.metadata.name>-node-pool` にする．
+- `.spec.nodePool`　は machine リソースから持ってくる．
 
 ```yaml
 ---
@@ -304,12 +369,12 @@ spec:
       mode: maintenance
       taint: false # omitempty;default=false
       machineType:
-        - name: compute-medium # Support only a machineType in first release
+        - name: compute-medium # Support only one machineType in first release
     - name: eriri
       mode: ready
       taint: true # omitempty;default=false
       machineType:
-        - name: compute-medium # Support only a machineType in first release
+        - name: compute-medium # Support only one machineType in first release
   machineTypeStock:
     - name: compute-xlarge
     - name: compute-large
@@ -326,4 +391,65 @@ status:
       condition: Maintenance
     - name: eriri
       condition: NotReady
+```
+
+## Admission Mutating Webhooks の設計
+
+### Pod Resource Injector
+
+Pod ラベルで指定された machineType に対応する物を Pod の `.spec.tolerations`，`.spec.affinity`，`.spec.containers[*].resources` へ挿入する．  
+
+Note:
+- `imperator.tenzen.io/inject-resource: enabled` のラベルがついた namespace のみ resource を挿入する．
+- デフォルトでは，index が 0 のコンテナにリソースを挿入するが，ラベルに `imperator.tenzen-y.io/inject-resource` があった場合そのコンテナに挿入する．
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: guest-pod
+  labels:
+    imperator.tenzen-y.io/machine-group: general-machine
+    imperator.tenzen-y.io/machine-type: compute-xlarge
+    imperator.tenzen-y.io/pod-role: guest
+    imperator.tenzen-y.io/injecting-container: guest-container
+spec:
+  tolerations:
+    - key: imperator.tenzen-y.io/compute-xlarge
+      effect: NoSchedule
+      operator: Equal
+      value: general-machine
+    - key: imperator.tenzen-y.io/node-pool
+      effect: NoSchedule
+      operator: Equal
+      value: ready
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: imperator.tenzen-y.io/compute-xlarge
+                operator: In
+                values:
+                  - general-machine
+              - key: imperator.tenzen-y.io/node-pool
+                operator: In
+                values:
+                  - ready
+              - key: nvidia.com/gpu.family
+                operator: In
+                values:
+                  - ampere
+  containers:
+    - name: guest-container
+      resources:
+        requests:
+          cpu: "40000m"
+          memory: "128Gi"
+          nvidia.com/gpu: "2"
+        limits:
+          cpu: "40000m"
+          memory: "128Gi"
+          nvidia.com/gpu: "2"
+...
 ```

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="517px" preserveAspectRatio="none" style="width:712px;height:517px;background:#FFFFFF;" version="1.1" viewBox="0 0 712 517" width="712px" zoomAndPan="magnify"><defs><filter height="300%" id="f1lci7qscrndru" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><rect fill="#FFFFFF" filter="url(#f1lci7qscrndru)" height="117.2422" style="stroke:#A80036;stroke-width:1.0;" width="10" x="24.5" y="88.2871"/><rect fill="#FFFFFF" filter="url(#f1lci7qscrndru)" height="351.7266" style="stroke:#A80036;stroke-width:1.0;" width="10" x="115.5" y="88.2871"/><rect fill="#FFFFFF" filter="url(#f1lci7qscrndru)" height="58.6211" style="stroke:#A80036;stroke-width:1.0;" width="10" x="542.5" y="117.5977"/><rect fill="#FFFFFF" filter="url(#f1lci7qscrndru)" height="214.1738" style="stroke:#A80036;stroke-width:1.0;" width="10" x="652.5" y="234.8398"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="29" x2="29" y1="56.9766" y2="458.0137"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="120" x2="120" y1="56.9766" y2="458.0137"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="547" x2="547" y1="56.9766" y2="458.0137"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:5.0,5.0;" x1="657" x2="657" y1="56.9766" y2="458.0137"/><rect fill="#FEFECE" filter="url(#f1lci7qscrndru)" height="30.4883" style="stroke:#A80036;stroke-width:1.5;" width="45" x="5" y="21.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="31" x="12" y="42.0234">User</text><rect fill="#FEFECE" filter="url(#f1lci7qscrndru)" height="30.4883" style="stroke:#A80036;stroke-width:1.5;" width="45" x="5" y="457.0137"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="31" x="12" y="477.5488">User</text><rect fill="#FEFECE" filter="url(#f1lci7qscrndru)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="75" x="81" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="61" x="88" y="25.5352">Kube API</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43" x="99" y="42.0234">Server</text><rect fill="#FEFECE" filter="url(#f1lci7qscrndru)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="75" x="81" y="457.0137"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="61" x="88" y="477.5488">Kube API</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43" x="99" y="494.0371">Server</text><rect fill="#FEFECE" filter="url(#f1lci7qscrndru)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="107" x="492" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="93" x="499" y="25.5352">Pod Resource</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="52" x="519.5" y="42.0234">Injector</text><rect fill="#FEFECE" filter="url(#f1lci7qscrndru)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="107" x="492" y="457.0137"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="93" x="499" y="477.5488">Pod Resource</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="52" x="519.5" y="494.0371">Injector</text><rect fill="#FEFECE" filter="url(#f1lci7qscrndru)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="85" x="613" y="5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57" x="627" y="25.5352">Machine</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="67" x="624" y="42.0234">controller</text><rect fill="#FEFECE" filter="url(#f1lci7qscrndru)" height="46.9766" style="stroke:#A80036;stroke-width:1.5;" width="85" x="613" y="457.0137"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57" x="627" y="477.5488">Machine</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="67" x="624" y="494.0371">controller</text><rect fill="#FFFFFF" filter="url(#f1lci7qscrndru)" height="117.2422" style="stroke:#A80036;stroke-width:1.0;" width="10" x="24.5" y="88.2871"/><rect fill="#FFFFFF" filter="url(#f1lci7qscrndru)" height="351.7266" style="stroke:#A80036;stroke-width:1.0;" width="10" x="115.5" y="88.2871"/><rect fill="#FFFFFF" filter="url(#f1lci7qscrndru)" height="58.6211" style="stroke:#A80036;stroke-width:1.0;" width="10" x="542.5" y="117.5977"/><rect fill="#FFFFFF" filter="url(#f1lci7qscrndru)" height="214.1738" style="stroke:#A80036;stroke-width:1.0;" width="10" x="652.5" y="234.8398"/><polygon fill="#A80036" points="103.5,84.2871,113.5,88.2871,103.5,92.2871,107.5,88.2871" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="34.5" x2="109.5" y1="88.2871" y2="88.2871"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="67" x="41.5" y="83.5449">Create Pod</text><polygon fill="#A80036" points="530.5,113.5977,540.5,117.5977,530.5,121.5977,534.5,117.5977" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="125.5" x2="536.5" y1="117.5977" y2="117.5977"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="54" x="132.5" y="112.8555">New Pod</text><polygon fill="#A80036" points="136.5,142.9082,126.5,146.9082,136.5,150.9082,132.5,146.9082" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="130.5" x2="541.5" y1="146.9082" y2="146.9082"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="393" x="142.5" y="142.166">Inject Container Resources, nodeAffinity and Toleration to Pod</text><polygon fill="#A80036" points="136.5,172.2188,126.5,176.2188,136.5,180.2188,132.5,176.2188" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="130.5" x2="546.5" y1="176.2188" y2="176.2188"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="98" x="142.5" y="171.4766">Webhook result</text><polygon fill="#A80036" points="40.5,201.5293,30.5,205.5293,40.5,209.5293,36.5,205.5293" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="34.5" x2="114.5" y1="205.5293" y2="205.5293"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36" x="46.5" y="200.7871">result</text><polygon fill="#A80036" points="640.5,230.8398,650.5,234.8398,640.5,238.8398,644.5,234.8398" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="125.5" x2="646.5" y1="234.8398" y2="234.8398"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="115" x="132.5" y="230.0977">Created Guest Pod</text><polygon fill="#A80036" points="136.5,260.1504,126.5,264.1504,136.5,268.1504,132.5,264.1504" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="130.5" x2="651.5" y1="264.1504" y2="264.1504"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="164" x="142.5" y="259.4082">Update Machine CR Status</text><polygon fill="#A80036" points="640.5,289.4609,650.5,293.4609,640.5,297.4609,644.5,293.4609" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="125.5" x2="646.5" y1="293.4609" y2="293.4609"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="172" x="132.5" y="288.7188">Updated Machine CR Status</text><polygon fill="#A80036" points="136.5,318.7715,126.5,322.7715,136.5,326.7715,132.5,322.7715" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="130.5" x2="651.5" y1="322.7715" y2="322.7715"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="272" x="142.5" y="318.0293">Scale down StatefulSet to reserve resources</text><polygon fill="#A80036" points="640.5,348.082,650.5,352.082,640.5,356.082,644.5,352.082" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="125.5" x2="646.5" y1="352.082" y2="352.082"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="206" x="132.5" y="347.3398">Deleted Pod to reserve resources</text><polygon fill="#A80036" points="136.5,377.3926,126.5,381.3926,136.5,385.3926,132.5,381.3926" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="130.5" x2="651.5" y1="381.3926" y2="381.3926"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="164" x="142.5" y="376.6504">Update Machine CR Status</text><polygon fill="#A80036" points="640.5,406.7031,650.5,410.7031,640.5,414.7031,644.5,410.7031" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="125.5" x2="646.5" y1="410.7031" y2="410.7031"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="111" x="132.5" y="405.9609">Started Guest Pod</text><polygon fill="#A80036" points="131.5,436.0137,121.5,440.0137,131.5,444.0137,127.5,440.0137" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="125.5" x2="651.5" y1="440.0137" y2="440.0137"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="164" x="137.5" y="435.2715">Update Machine CR Status</text><!--MD5=[676158b4898750ee08926a69f6696b3c]
+@startuml
+'https://plantuml.com/sequence-diagram
+
+participant "User" as User order 1
+participant "Kube API\n Server" as APIServer order 2
+participant "Pod Resource\nInjector" as PodInjector order 3
+participant "Machine\n controller" as MachineController order 4
+
+User -> APIServer: Create Pod
+activate User
+activate APIServer
+
+APIServer - -> PodInjector: New Pod
+activate PodInjector
+PodInjector - -> APIServer: Inject Container Resources, nodeAffinity and Toleration to Pod
+PodInjector - -> APIServer: Webhook result
+deactivate PodInjector
+
+APIServer -> User: result
+deactivate User
+
+APIServer - -> MachineController: Created Guest Pod
+activate MachineController
+MachineController - -> APIServer: Update Machine CR Status
+APIServer - -> MachineController: Updated Machine CR Status
+MachineController - -> APIServer: Scale down StatefulSet to reserve resources
+APIServer - -> MachineController: Deleted Pod to reserve resources
+MachineController - -> APIServer: Update Machine CR Status
+APIServer - -> MachineController: Started Guest Pod
+MachineController - -> APIServer: Update Machine CR Status
+
+deactivate APIServer
+
+@enduml
+
+@startuml
+
+participant "User" as User order 1
+participant "Kube API\n Server" as APIServer order 2
+participant "Pod Resource\nInjector" as PodInjector order 3
+participant "Machine\n controller" as MachineController order 4
+
+User -> APIServer: Create Pod
+activate User
+activate APIServer
+
+APIServer - -> PodInjector: New Pod
+activate PodInjector
+PodInjector - -> APIServer: Inject Container Resources, nodeAffinity and Toleration to Pod
+PodInjector - -> APIServer: Webhook result
+deactivate PodInjector
+
+APIServer -> User: result
+deactivate User
+
+APIServer - -> MachineController: Created Guest Pod
+activate MachineController
+MachineController - -> APIServer: Update Machine CR Status
+APIServer - -> MachineController: Updated Machine CR Status
+MachineController - -> APIServer: Scale down StatefulSet to reserve resources
+APIServer - -> MachineController: Deleted Pod to reserve resources
+MachineController - -> APIServer: Update Machine CR Status
+APIServer - -> MachineController: Started Guest Pod
+MachineController - -> APIServer: Update Machine CR Status
+
+deactivate APIServer
+
+@enduml
+
+PlantUML version 1.2021.15(Wed Dec 01 01:45:34 JST 2021)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: ja
+Country: JP
+--></g></svg>
