@@ -10,7 +10,7 @@ spec:
       mode: ready
       taint: false # omitempty;default=false
       machineType:
-        - name: compute-xmedium # Support only a machineType in first release
+        - name: compute-xmedium # Support only one machineType in first release
   machineTypes:
     - name: compute-xmedium
       spec:

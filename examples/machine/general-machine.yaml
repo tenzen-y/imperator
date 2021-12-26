@@ -10,7 +10,7 @@ spec:
       mode: ready
       taint: false # omitempty;default=false
       machineType:
-        - name: compute-small # Support only a machineType in first release
+        - name: compute-small # Support only one machineType in first release
   machineTypes:
     - name: compute-small
       spec:
