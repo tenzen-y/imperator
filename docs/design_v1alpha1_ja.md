@@ -1,12 +1,12 @@
 # imperator v1alpha1
-design document for imperator v1alpha1.
+Design document for imperator v1alpha1 in Japanese.
 
 ## Goal
 仮想的なリソースグループをコンテナアプリケーションへ提供する．
 
 ## Overview
 
-Imperator は `Machine Controller`， `MachineNodePool Controller`， `Pod Resource Injector` の 3 つの主要コンポーネントから構成された
+`Imperator` は `Machine Controller`，`MachineNodePool Controller`，`Pod Resource Injector` の 3 つの主要コンポーネントから構成された
 Kubernetes Operator である．
 
 1. `Machine Controller` (Custom Controller): 
@@ -18,11 +18,11 @@ Kubernetes Operator である．
    - NodePool に定義された Node へ MachineType などの Label，Annotation，Taint をセットする．
 
 3. `Pod Resource Injector` (Admission Mutating Webhooks):
-   - Imperator 管理下の Guest Pod のコンテナへ resource，nodeAffinity，taint を付与する．
+   - Imperator 管理下の Guest Pod のコンテナへ `.spec.containers[*].resources`，`.spec.affinity.nodeAffinity`，`.spec.tolerations` を付与する．
 
 Note: v1alpha1 では 1 つの Node を複数の Machine グループに参加させることはできない．
 
-## Labels，Annotations，Taints，Toleration フォーマット
+## Labels，Annotations，Taints，Toleration のフォーマット
 
 - Labels
 
@@ -49,15 +49,15 @@ Note: v1alpha1 では 1 つの Node を複数の Machine グループに参加�
 
 ## Custom Controller の設計
 
-- 管理者のワークフロー例
+- 管理者のワークフロー
 
-![管理者のワークフロー例](../imgs/v1alpha1-admin-sequence.svg)
+![管理者のワークフロー](../imgs/v1alpha1-admin-sequence.svg)
 
-- ユーザのワークフロー例
+- ユーザのワークフロー
 
-![ユーザのワークフロー例](../imgs/v1alpha1-user-sequence.svg)
+![ユーザのワークフロー](../imgs/v1alpha1-user-sequence.svg)
 
-### Machine controller
+### Machine Controller
 
 - 計算リソース予約のための StatefulSet および Service の作成する．
 - Guest Pod と Reservation Pod の数量管理を行う．
@@ -69,7 +69,7 @@ Note: v1alpha1 では 1 つの Node を複数の Machine グループに参加�
 3. Owner が Machine CR である StatefulSet に変化があった時
 4. Guest Pod もしくは Reservation Pod に変化があった時
 
-#### machineType の数量管理
+#### MachineType の数量管理
 
 - 各 machineType には以下の 4 つの状態が存在する．
   - `Maximum`: Machine CR で設定された machineType の最大使用可能数 
@@ -95,7 +95,7 @@ Note: v1alpha1 では 1 つの Node を複数の Machine グループに参加�
     - `.status.Conditions[*]` に `{Type: ContainersReady, "Status": "False"}` がある．
     - `spec.nodeName` が空である．
 
-#### Machine リソース
+#### Machine CR
 
 Note:
 - `.spec.nodePool[*].machineType` で複数の `machineType` はサポートしない．
@@ -282,7 +282,7 @@ spec:
 - Guest Pod のオプションのラベル
   - key: `imperator.tenzen-y.io/injecting-container`
     value: `*`
-    description: リソースを挿入したいコンテナの名前（デフォルトは 0 個目のコンテナ）
+    description: リソースを注入したいコンテナの名前（デフォルトは 0 個目のコンテナ）
     
 Note: Pod を直接作るのではなく，Deployment などを使って間接的に作る場合は，必ず `spec.template.metadata` にラベルをつける必要がある．
 Deployment などの `.metadata.labels` につけても正常に動作しない．
@@ -315,12 +315,12 @@ spec:
           args: [ "python", "train.py" ]
 ```
 
-### NodePool controller
+### NodePool Controller
 
 - Node の Annotation　に `imperator.tenzen-y.io/machine-group=<MACHINE_GROUP_NAME>` を付与する．
-- nodePool の mode が ready のノードに `imperator.tenzen-y.io/nodePool=ready` のラベルをつける．
-  nodePool に無いノードもしくは， mode が `ready` ではなくなったノードや status が `not-ready` では無くなったノードからはラベルを削除する．
-- status の nodePool 欄 conditions は，定期的に node を監視し，健康状態に応じて変更する．
+- nodePool の `.spec.nodePool[*].mode` が `ready` のノードに `imperator.tenzen-y.io/nodePool=ready` のラベルをつける．
+- nodePool に無い Node もしくは，`.spec.nodePool[*].mode` が `ready` ではなくなったノードや `.status.nodePool[*].condition` が `NotReady` になったノードからはラベルを削除する．
+- `.status.nodePool[*].condition` は，定期的に Node を監視し，健康状態に応じて変更する．
 
 #### Work Queue への追加条件
 
@@ -343,11 +343,11 @@ Label，Annotation, Taint のいずれかが更新された時．
     - `Maintenance` の条件を満たさない．
     - `NotReady` の条件を満たさない．
 
-#### MachineNodePool リソース
+#### MachineNodePool CR
 
 Note:
-- `.metadata.name` は ownerReference を参照し，`<.metadata.name>-node-pool` にする．
-- `.spec.nodePool`　は machine リソースから持ってくる．
+- `.metadata.name` は`<OWNER_MACHINE_CR_NAME>-node-pool` にする．
+- `.spec.nodePool`　は `Machine` CR から持ってくる．
 
 ```yaml
 ---
@@ -397,11 +397,11 @@ status:
 
 ### Pod Resource Injector
 
-Pod ラベルで指定された machineType に対応する物を Pod の `.spec.tolerations`，`.spec.affinity`，`.spec.containers[*].resources` へ挿入する．  
+Pod ラベルで指定された `machineType` に対応する物を Pod の `.spec.tolerations`，`.spec.affinity`，`.spec.containers[*].resources` へ注入する．  
 
 Note:
-- `imperator.tenzen.io/inject-resource: enabled` のラベルがついた namespace のみ resource を挿入する．
-- デフォルトでは，index が 0 のコンテナにリソースを挿入するが，ラベルに `imperator.tenzen-y.io/inject-resource` があった場合そのコンテナに挿入する．
+- `imperator.tenzen.io/inject-resource: enabled` のラベルがついた namespace のみ resource を注入する．
+- デフォルトでは，index が 0 のコンテナにリソースを注入するが，ラベルに `imperator.tenzen-y.io/inject-resource` があった場合そのコンテナに注入する．
 
 ```yaml
 apiVersion: v1
