@@ -1,7 +1,7 @@
 # imperator v1alpha
 Design document for Imperator v1beta1.
 
-## Goal
+## Motivation
 Provide virtual resource groups to applications.
 
 ## Overview

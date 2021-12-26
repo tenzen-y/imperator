@@ -162,10 +162,3 @@ GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
-
-.PHONY: bundle
-bundle: manifests ## Generate bundle manifests and metadata, then validate generated files.
-	kubebuilder generate manifests -q
-	cd config/manager && kustomize edit set image controller=$(IMG)
-	kustomize build config/manifests | kubebuilder generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	kubebuilder bundle validate ./bundle
