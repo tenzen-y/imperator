@@ -12,3 +12,6 @@ Imperator is Kubernetes Custom Controller to provide virtual resource groups.
 
 ## Getting Started
 [Here](https://github.com/tenzen-y/imperator/tree/master/examples) you will find some examples.
+
+## Contribution
+Any contributions are welcome! Please take a look [CONTRIBUTING.md](./CONTRIBUTING.md) for developers.

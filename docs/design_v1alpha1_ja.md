@@ -1,7 +1,7 @@
 # imperator v1alpha1
-Design document for imperator v1alpha1 in Japanese.
+Design document for Imperator v1alpha1 in Japanese.
 
-## Goal
+## Motivation
 仮想的なリソースグループをコンテナアプリケーションへ提供する．
 
 ## Overview
