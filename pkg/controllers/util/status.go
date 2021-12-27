@@ -22,9 +22,9 @@ import (
 	imperatorv1alpha1 "github.com/tenzen-y/imperator/pkg/api/v1alpha1"
 )
 
-func GetMachineTypeUsage(availableMachine []imperatorv1alpha1.AvailableMachineCondition, machineType string) *imperatorv1alpha1.UsageCondition {
+func GetMachineTypeUsage(availableMachine []imperatorv1alpha1.AvailableMachineCondition, machineTypeName string) *imperatorv1alpha1.UsageCondition {
 	for _, cond := range availableMachine {
-		if cond.Name != machineType {
+		if cond.Name != machineTypeName {
 			continue
 		}
 		return &cond.Usage
