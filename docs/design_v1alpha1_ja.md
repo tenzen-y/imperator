@@ -269,20 +269,21 @@ spec:
 #### Guest Pod
 
 - Guest Pod に必須のラベル
-  - key: `imperator.tenzen-y.io/machine-group`
-    value: `*`
+  - key: `imperator.tenzen-y.io/machine-group`  
+    value: `*`  
     description: 使用する machineType が属している machine-group の名前
-  - key: `imperator.tenzen-y.io/machine-type`
-    value: `*`
+  - key: `imperator.tenzen-y.io/machine-type`  
+    value: `*`  
     description: 使用する machineType の名前
-  - key: `imperator.tenzen-y.io/pod-role`
-    value: `guest`
+  - key: `imperator.tenzen-y.io/pod-role`  
+    value: `guest`  
     description: Pod の役割
 
 - Guest Pod のオプションのラベル
-  - key: `imperator.tenzen-y.io/injecting-container`
-    value: `*`
-    description: リソースを注入したいコンテナの名前（デフォルトは 0 個目のコンテナ）
+  - key: `imperator.tenzen-y.io/injecting-container`  
+    value: `*`  
+    default: 0 個目のコンテナ  
+    description: リソースを注入したいコンテナの名前
     
 Note: Pod を直接作るのではなく，Deployment などを使って間接的に作る場合は，必ず `spec.template.metadata` にラベルをつける必要がある．
 Deployment などの `.metadata.labels` につけても正常に動作しない．

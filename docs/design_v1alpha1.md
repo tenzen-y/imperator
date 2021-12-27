@@ -266,20 +266,20 @@ spec:
 #### Guest Pod
 
 - Essential Labels for `Guest Pod`
-   - key: `imperator.tenzen-y.io/machine-group`
-     value: `*`
+   - key: `imperator.tenzen-y.io/machine-group`  
+     value: `*`  
      description: The name of machine-group to which the `machineType` to be used belongs. 
-   - key: `imperator.tenzen-y.io/machine-type`
-     value: `*`
+   - key: `imperator.tenzen-y.io/machine-type`  
+     value: `*`  
      description: The name of `machineType`.
-   - key: `imperator.tenzen-y.io/pod-role`
-     value: `guest`
+   - key: `imperator.tenzen-y.io/pod-role`  
+     value: `guest`  
      description: Pod role.
 
 - Option Labels for `Guest Pod`
-   - key: `imperator.tenzen-y.io/injecting-container`
-     value: `*`
-     default: A container with index 0.
+   - key: `imperator.tenzen-y.io/injecting-container`  
+     value: `*`  
+     default: A container with index 0.  
      description: The name of container into which users want to inject resources.
 
 Note: If users do not create `Pod` directly, but indirectly using `Deployment` or something similar,
