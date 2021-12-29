@@ -78,7 +78,7 @@ endif
 
 .PHONY: test
 test: envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out.tmp
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out.tmp -covermode=atomic
 	@awk '!/.*zz_generated.deepcopy.go.*/' cover.out.tmp > cover.out
 	@rm -f cover.out.tmp
 	go tool cover -func cover.out

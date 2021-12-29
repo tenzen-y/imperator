@@ -1,6 +1,9 @@
 # Imperator
 
+[![GitHub license](https://img.shields.io/github/license/tenzen-y/imperator)](https://github.com/tenzen-y/imperator/blob/master/LICENSE)
 [![Go Tests](https://github.com/tenzen-y/imperator/actions/workflows/go-test.yaml/badge.svg?branch=master)](https://github.com/tenzen-y/imperator/actions/workflows/go-test.yaml?branch=master)
+[![Codecov](https://codecov.io/gh/tenzen-y/imperator/branch/master/graph/badge.svg?token=34S3WJXV40)](https://codecov.io/gh/tenzen-y/imperator)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tenzen-y/imperator)
 
 ## Overview
 Imperator is Kubernetes Operator to provide virtual resource groups.
