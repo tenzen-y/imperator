@@ -34,14 +34,21 @@ func TestGetGPUSelector(t *testing.T) {
 			description: "Use Family",
 			gpuSpec:     &GPUSpec{Family: "turing"},
 			expected:    []string{consts.NvidiaGPUFamilyKey, "turing"},
-		}, {
+		},
+		{
 			description: "Use Product",
 			gpuSpec:     &GPUSpec{Product: "NVIDIA-GeForce-RTX-3080"},
 			expected:    []string{consts.NvidiaGPUProductKey, "NVIDIA-GeForce-RTX-3080"},
-		}, {
+		},
+		{
 			description: "Use Machine",
 			gpuSpec:     &GPUSpec{Machine: "DGX-A100"},
 			expected:    []string{consts.NvidiaGPUMachineKey, "DGX-A100"},
+		},
+		{
+			description: "Family is empty",
+			gpuSpec:     &GPUSpec{Family: ""},
+			expected:    make([]string, 0),
 		},
 	}
 

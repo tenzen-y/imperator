@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd $(dirname $0)
-set -o pipefail
+set -eo pipefail
+cd "$(dirname "$0")"
 
 kind create cluster --config ./kind-config.yaml
 kubectl config use-context kind-kind
