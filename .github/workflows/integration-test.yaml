@@ -3,13 +3,13 @@ on:
   push:
     branches:
       - master
-      - "release-*"
+      - release-*
     tags:
       - v*
   pull_request:
     branches:
       - master
-      - "release-*"
+      - release-*
 
 jobs:
   integration-test:
@@ -22,7 +22,10 @@ jobs:
         name: Checkout
         uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+      -
+        name: Fetch
+        run: git fetch --tags -f
       -
         name: Setup minikube
         uses: manusa/actions-setup-minikube@v2.4.2

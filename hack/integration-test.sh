@@ -27,7 +27,7 @@ function setup() {
   echo "Setup imperator"
 
   yq eval -i '.spec.template.spec.containers[0].imagePullPolicy|="IfNotPresent"' ../config/manager/manager.yaml
-  yq eval -i '.images[0].newTag|="latest"' config/manager/kustomization.yaml
+  yq eval -i '.images[0].newTag|="latest"' ../config/manager/kustomization.yaml
 
   kustomize build ../config/crd | kubectl apply -f -
   kustomize build ../config/default | kubectl apply -f -
@@ -104,8 +104,10 @@ function _get_desired_resources() {
 function _teardown() {
   kustomize build ../examples/guest | kubectl delete -f -
   kubectl wait pods -n "${GUEST_NAMESPACE}" -l "${GUEST_POD_LABELS}" --for=delete --timeout "${TIMEOUT}"
-  rm -f ../examples/guest/namespace.yaml
-  mv ../examples/guest/namespace.yaml.bak ../examples/guest/namespace.yaml
+  if [ -f "../examples/guest/namespace.yaml.bak" ]; then \
+    rm -f ../examples/guest/namespace.yaml
+    mv ../examples/guest/namespace.yaml.bak ../examples/guest/namespace.yaml
+  fi;
 }
 
 function integration_test() {

@@ -95,7 +95,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the imperator-controller.
-	docker build -t ${IMG} -f cmd/imperator-controller/Dockerfile --build-arg "$(LDFLAGS)" .
+	docker build -t ${IMG} -f cmd/imperator-controller/Dockerfile --build-arg LDFLAGS="$(LDFLAGS)" .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the imperator-controller.

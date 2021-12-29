@@ -86,7 +86,7 @@ version::ldflags() {
         local key=${1}
         local val=${2}
         ldflags+=(
-            "-X '-X github.com/tenzen-y/imperator/pkg/version.${key}=${val}'"
+            "-X 'github.com/tenzen-y/imperator/pkg/version.${key}=${val}'"
         )
     }
 

@@ -22,6 +22,9 @@ jobs:
         with:
           fetch-depth: 0
       -
+        name: Fetch
+        run: git fetch --tags -f
+      -
         name: Login to DockerHub
         uses: docker/login-action@v1
         with:
@@ -30,7 +33,7 @@ jobs:
           password: ${{ secrets.github_token }}
       -
         name: Build imperator-controller image
-        run: make docker-build IMAGE_TAG_VERSION="${GITHUB_REF#refs/heads/}"
+        run: make docker-build IMAGE_TAG_VERSION="${GITHUB_REF#refs/tags/}"
       -
         name: Release imperator-controller image
-        run: make docker-release IMAGE_TAG_VERSION="${GITHUB_REF#refs/heads/}"
+        run: make docker-release IMAGE_TAG_VERSION="${GITHUB_REF#refs/tags/}"
