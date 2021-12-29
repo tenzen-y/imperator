@@ -131,8 +131,6 @@ func (r *resourceInjector) injectToPod(ctx context.Context, pod *corev1.Pod) err
 		return err
 	} else if targetMachineType == nil {
 		return fmt.Errorf("machine-group, <%s> does not have machine-type, <%s>", machineGroup, machineTypeName)
-	} else if machineTypeUsage == nil {
-		return fmt.Errorf("imperator controller is preparing")
 	}
 
 	if machineTypeUsage.Reserved == 0 {
