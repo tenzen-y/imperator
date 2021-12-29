@@ -103,7 +103,7 @@ func main() {
 	setupWebhooks(mgr)
 	setupHealthzCheck(mgr)
 
-	setupLog.Info("starting imperator", "version", version.Version)
+	setupLog.Info("starting imperator", "version", version.Get().String())
 	if err = mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running imperator")
 		os.Exit(1)

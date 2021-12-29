@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Copyright 2021 Yuki Iwai (@tenzen-y)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#!/usr/bin/env bash
 cd "$(dirname "$0")"
 set -eox pipefail
 
@@ -28,10 +27,12 @@ function setup() {
   echo "Setup imperator"
 
   yq eval -i '.spec.template.spec.containers[0].imagePullPolicy|="IfNotPresent"' ../config/manager/manager.yaml
+  yq eval -i '.images[0].newTag|="latest"' config/manager/kustomization.yaml
+
   kustomize build ../config/crd | kubectl apply -f -
   kustomize build ../config/default | kubectl apply -f -
-  kubectl wait pods -n ${IMPERATOR_CORE_NAMESPACE} --for condition=ready --timeout=${TIMEOUT} -l app.kubernetes.io/name=imperator
-  kubectl get pods -n ${IMPERATOR_CORE_NAMESPACE}
+  kubectl wait pods -n "${IMPERATOR_CORE_NAMESPACE}" --for condition=ready --timeout="${TIMEOUT}" -l app.kubernetes.io/name=imperator
+  kubectl get pods -n "${IMPERATOR_CORE_NAMESPACE}"
   sleep 5
 
   # Deploy Machine
@@ -41,7 +42,7 @@ function setup() {
   fi;
   kubectl apply -f ../examples/machine/general-machine.yaml
   kubectl get machines.imperator.tenzen-y.io,machinenodepools.imperator.tenzen-y.io
-  kubectl get pods -n ${IMPERATOR_CORE_NAMESPACE}
+  kubectl get pods -n "${IMPERATOR_CORE_NAMESPACE}"
   kubectl describe machines general-machine
 }
 
@@ -49,15 +50,16 @@ function _deploy_guest_deployment() {
   injection=$1
   echo "Deploy Guest Deployment"
   if ! $injection; then \
+    cp ../examples/guest/namespace.yaml ../examples/guest/namespace.yaml.bak
     yq eval -i 'del(.metadata.labels)' ../examples/guest/namespace.yaml
   fi;
   kustomize build ../examples/guest | kubectl apply -f -
 
   count=0
-  WAIT_LIMIT=5
-  while [ ${count} -lt ${WAIT_LIMIT} ]; do
-    POD_NUM=$(kubectl get pods -n ${GUEST_NAMESPACE} 2>/dev/null | wc -l)
-    if [ "${POD_NUM}" = "0" ]; then \
+  wait_limit=5
+  while [ "${count}" -lt "${wait_limit}" ]; do
+    pod_num=$(kubectl get pods -n ${GUEST_NAMESPACE} 2>/dev/null | wc -l)
+    if [ "${pod_num}" = "0" ]; then \
       count=$(( "${count}" + 1 ));
       sleep 2;
     else \
@@ -65,14 +67,14 @@ function _deploy_guest_deployment() {
     fi;
   done;
   
-  kubectl wait pods -n ${GUEST_NAMESPACE} --for condition=ready --timeout ${TIMEOUT} -l ${GUEST_POD_LABELS}
-  kubectl get pods -n ${GUEST_NAMESPACE}
+  kubectl wait pods -n "${GUEST_NAMESPACE}" --for condition=ready --timeout "${TIMEOUT}" -l "${GUEST_POD_LABELS}"
+  kubectl get pods -n "${GUEST_NAMESPACE}"
   kubectl describe machines general-machine
 }
 
 function _get_pod_yaml() {
-  POD_NAME="$(kubectl get pods -n ${GUEST_NAMESPACE} -l ${GUEST_POD_LABELS} -o name | cut -d/ -f2)"
-  kubectl get pods -n ${GUEST_NAMESPACE} "${POD_NAME}" -o yaml
+  POD_NAME="$(kubectl get pods -n "${GUEST_NAMESPACE}" -l "${GUEST_POD_LABELS}" -o name | cut -d/ -f2)"
+  kubectl get pods -n "${GUEST_NAMESPACE}" "${POD_NAME}" -o yaml
 }
 
 function _get_actual_resources() {
@@ -101,8 +103,9 @@ function _get_desired_resources() {
 
 function _teardown() {
   kustomize build ../examples/guest | kubectl delete -f -
-  kubectl wait pods -n ${GUEST_NAMESPACE} -l ${GUEST_POD_LABELS} --for=delete --timeout ${TIMEOUT}
-  git reset --hard
+  kubectl wait pods -n "${GUEST_NAMESPACE}" -l "${GUEST_POD_LABELS}" --for=delete --timeout "${TIMEOUT}"
+  rm -f ../examples/guest/namespace.yaml
+  mv ../examples/guest/namespace.yaml.bak ../examples/guest/namespace.yaml
 }
 
 function integration_test() {
