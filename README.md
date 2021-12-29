@@ -3,7 +3,7 @@
 [![Go Tests](https://github.com/tenzen-y/imperator/actions/workflows/go-test.yaml/badge.svg?branch=master)](https://github.com/tenzen-y/imperator/actions/workflows/go-test.yaml?branch=master)
 
 ## Overview
-Imperator is Kubernetes Custom Controller to provide virtual resource groups.
+Imperator is Kubernetes Operator to provide virtual resource groups.
 
 ## Prerequisites
 - [Kubernetes](https://kubernetes.io/) >= v1.20
