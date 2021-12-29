@@ -1,5 +1,3 @@
-LDFLAGS := $(shell hack/version.sh)
-
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
 IMAGE_TAG_BASE ?= ghcr.io/tenzen-y/imperator/imperator-controller
@@ -24,6 +22,8 @@ endif
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
+
+LDFLAGS := $(shell hack/version.sh)
 
 all: build
 
@@ -69,7 +69,7 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-.PHPNY: golangci-lint
+.PHONY: golangci-lint
 golangci-lint:
 ifeq ("$(shell golangci-lint version 2>/dev/null)", "")
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
@@ -86,20 +86,31 @@ test: envtest ## Run tests.
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build imperator binary.
-	go build -ldflags $(LDFLAGS) -o bin/imperator-controller cmd/imperator-controller/main.go
+build: generate fmt vet ## Build imperator-controller binary.
+	go build -ldflags "$(LDFLAGS)" -o bin/imperator-controller cmd/imperator-controller/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./cmd/imperator-controller/main.go
+	go run -ldflags "$(LDFLAGS)" ./cmd/imperator-controller/main.go
 
 .PHONY: docker-build
-docker-build: ## Build docker image with the imperator.
-	docker build -t ${IMG} -f cmd/imperator-controller/Dockerfile .
+docker-build: ## Build docker image with the imperator-controller.
+	docker build -t ${IMG} -f cmd/imperator-controller/Dockerfile --build-arg "$(LDFLAGS)" .
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the imperator.
+docker-push: ## Push docker image with the imperator-controller.
 	docker push ${IMG}
+
+.PHONY: docker-release
+docker-release: docker-push
+	docker tag ${IMG} ${IMAGE_TAG_BASE}:latest
+	docker push ${IMAGE_TAG_BASE}:latest
+
+RELEASE_VERSION ?= v0.0.0
+.PHONY: prepare-release
+prepare-release: check test
+	RELEASE_VERSION="$(RELEASE_VERSION)" yq eval -i '.images[0].newTag|=env(RELEASE_VERSION)' ./config/manager/kustomization.yaml
+	$(MAKE) bundle-manifests
 
 ##@ Deployment
 

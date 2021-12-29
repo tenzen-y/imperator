@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - master
-    tags:
-      - v*
   pull_request:
     branches:
       - master
@@ -43,7 +41,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.github_token }}
       -
-        name: Build imperator image
+        name: Build imperator-controller image
         run: |
           make docker-build
           git_branch_name="${GITHUB_REF#refs/heads/}"
