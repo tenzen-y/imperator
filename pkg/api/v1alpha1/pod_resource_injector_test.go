@@ -119,6 +119,14 @@ func checkNoInjection(pod *corev1.Pod) {
 	}, consts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
 }
 
+func deleteAllTestGuestPods(namespaces []string) {
+	for _, nsName := range namespaces {
+		Expect(k8sClient.DeleteAllOf(ctx, &corev1.Pod{}, &client.DeleteAllOfOptions{ListOptions: client.ListOptions{
+			Namespace: nsName,
+		}})).NotTo(HaveOccurred())
+	}
+}
+
 var _ = Describe("Machine Webhook", func() {
 	const testMachineTypeName = "test-machine1"
 
@@ -126,11 +134,7 @@ var _ = Describe("Machine Webhook", func() {
 
 	BeforeEach(func() {
 		Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
-		for _, nsName := range []string{injectedNs, notInjectedNs} {
-			Expect(k8sClient.DeleteAllOf(ctx, &corev1.Pod{}, &client.DeleteAllOfOptions{ListOptions: client.ListOptions{
-				Namespace: nsName,
-			}})).NotTo(HaveOccurred())
-		}
+		deleteAllTestGuestPods([]string{injectedNs, notInjectedNs})
 		Expect(k8sClient.DeleteAllOf(ctx, &corev1.Node{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
 		fakeNodes := []string{"test-node1", "test-node2", "test-node3"}
 		for _, name := range fakeNodes {
@@ -253,6 +257,68 @@ var _ = Describe("Machine Webhook", func() {
 	//
 	//	Expect(k8sClient.Update(ctx, getPod, &client.UpdateOptions{})).NotTo(HaveOccurred())
 	//})
+	It("Specify a container name to inject resources using `imperator.tenzen-y.io/injecting-container` label", func() {
+		const injectedPodName = "injected-pod"
+		machine := newFakeMachine()
+		Expect(k8sClient.Create(ctx, machine, &client.CreateOptions{})).NotTo(HaveOccurred())
+		updateUsageConditions()
+
+		pod := newFakePod(injectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
+		pod.Labels[consts.ImperatorResourceInjectContainerNameKey] = "test2"
+		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
+
+		// Check Container Resource
+		resource := convertToResourceQuantity(&machine.Spec.MachineTypes[0])
+		expectedResource := corev1.ResourceRequirements{
+			Requests: resource,
+			Limits:   resource,
+		}
+		Eventually(func() string {
+			getPod := &corev1.Pod{}
+			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			return cmp.Diff(getPod.Spec.Containers[1].Resources, expectedResource)
+		}, consts.SuiteTestTimeOut).Should(BeEmpty())
+
+		//Check Pod Affinity
+		expectedAffinity := &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: GenerateAffinityMatchExpression(&machine.Spec.MachineTypes[0], testMachineGroup),
+						},
+					},
+				},
+			},
+		}
+		Eventually(func() string {
+			getPod := &corev1.Pod{}
+			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			return cmp.Diff(getPod.Spec.Affinity, expectedAffinity)
+		}, consts.SuiteTestTimeOut).Should(BeEmpty())
+
+		// Check Pod Toleration
+		expectedToleration := GenerateToleration(testMachineTypeName, testMachineGroup)
+		expectedToleration = append(expectedToleration, corev1.Toleration{
+			Key:               "node.kubernetes.io/not-ready",
+			Operator:          corev1.TolerationOpExists,
+			Effect:            corev1.TaintEffectNoExecute,
+			TolerationSeconds: pointer.Int64(300),
+		})
+		expectedToleration = append(expectedToleration, corev1.Toleration{
+			Key:               "node.kubernetes.io/unreachable",
+			Operator:          corev1.TolerationOpExists,
+			Effect:            corev1.TaintEffectNoExecute,
+			TolerationSeconds: pointer.Int64(300),
+		})
+
+		Eventually(func() []corev1.Toleration {
+			getPod := &corev1.Pod{}
+			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			return getPod.Spec.Tolerations
+		}, consts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
+	})
 
 	It("Failed to update Pod", func() {
 		const injectedPodName = "injected-pod"
@@ -272,15 +338,17 @@ var _ = Describe("Machine Webhook", func() {
 		Expect(k8sClient.Update(ctx, getPod, &client.UpdateOptions{})).ShouldNot(BeNil())
 	})
 
-	It("Failed to create Pod", func() {
+	It("Create Pod", func() {
 		testCases := []struct {
 			description string
 			fakePod     *corev1.Pod
+			fakeMachine *Machine
 			err         bool
 		}{
 			{
 				description: "There is not Pod namespace",
 				fakePod:     newFakePod("missing-namespace-pod", "missing-namespace", newTestGuestLabels(testMachineTypeName)),
+				fakeMachine: newFakeMachine(),
 				err:         true,
 			},
 			{
@@ -290,20 +358,31 @@ var _ = Describe("Machine Webhook", func() {
 					pod.Labels[consts.MachineGroupKey] = "null-machine-group"
 					return pod
 				}(),
-				err: true,
+				fakeMachine: newFakeMachine(),
+				err:         true,
 			},
 			{
 				description: "MachineGroup does not have specified machineType",
 				fakePod:     newFakePod("does-not-have-machine-type", injectedNs, newTestGuestLabels("null-machine-type")),
+				fakeMachine: newFakeMachine(),
 				err:         true,
+			},
+			{
+				description: "Reserved resources is zero",
+				fakePod:     newFakePod("test-pod", injectedNs, newTestGuestLabels(testMachineTypeName)),
+				fakeMachine: func() *Machine {
+					fake := newFakeMachine()
+					fake.Spec.MachineTypes[0].Available = 0
+					return fake
+				}(),
+				err: true,
 			},
 		}
 
-		fakeMachine := newFakeMachine()
-		Expect(k8sClient.Create(ctx, fakeMachine, &client.CreateOptions{})).NotTo(HaveOccurred())
-		updateUsageConditions()
-
 		for _, test := range testCases {
+			Expect(k8sClient.Create(ctx, test.fakeMachine, &client.CreateOptions{})).NotTo(HaveOccurred())
+			updateUsageConditions()
+
 			err := k8sClient.Create(ctx, test.fakePod, &client.CreateOptions{})
 			if test.err {
 				Expect(err).To(HaveOccurred(), test.description)
@@ -311,6 +390,7 @@ var _ = Describe("Machine Webhook", func() {
 				Expect(err).NotTo(HaveOccurred(), test.description)
 			}
 			Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred(), test.description)
+			deleteAllTestGuestPods([]string{injectedNs, notInjectedNs})
 		}
 	})
 })

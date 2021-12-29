@@ -19,7 +19,7 @@ Provide virtual resource groups to applications.
 
 Note: In `v1alpha1`, Node can not participate multiple machine-groups.
 
-## Formats of Labels，Annotations，Taints and Toleration
+## Formats of Labels, Annotations, Taints and Toleration
 
 - Labels
 

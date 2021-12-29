@@ -1,5 +1,7 @@
 # Imperator
 
+[![Go Tests](https://github.com/tenzen-y/imperator/actions/workflows/go-test.yaml/badge.svg?branch=master)](https://github.com/tenzen-y/imperator/actions/workflows/go-test.yaml?branch=master)
+
 ## Overview
 Imperator is Kubernetes Custom Controller to provide virtual resource groups.
 
