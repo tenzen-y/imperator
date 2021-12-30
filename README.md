@@ -1,9 +1,10 @@
 # Imperator
 
-[![GitHub license](https://img.shields.io/github/license/tenzen-y/imperator)](https://github.com/tenzen-y/imperator/blob/master/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tenzen-y/imperator)](https://goreportcard.com/report/github.com/tenzen-y/imperator)
 [![Go Tests](https://github.com/tenzen-y/imperator/actions/workflows/go-test.yaml/badge.svg?branch=master)](https://github.com/tenzen-y/imperator/actions/workflows/go-test.yaml?branch=master)
-[![Codecov](https://codecov.io/gh/tenzen-y/imperator/branch/master/graph/badge.svg?token=34S3WJXV40)](https://codecov.io/gh/tenzen-y/imperator)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tenzen-y/imperator)
+[![Codecov](https://codecov.io/gh/tenzen-y/imperator/branch/master/graph/badge.svg)](https://codecov.io/gh/tenzen-y/imperator/branch/master)
+[![GitHub license](https://img.shields.io/github/license/tenzen-y/imperator)](https://github.com/tenzen-y/imperator/blob/master/LICENSE)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tenzen-y/imperator)](https://github.com/tenzen-y/imperator/releases/tag/v0.0.1)
 
 ## Overview
 Imperator is Kubernetes Operator to provide virtual resource groups.
@@ -19,4 +20,4 @@ Imperator is Kubernetes Operator to provide virtual resource groups.
 [Here](https://github.com/tenzen-y/imperator/tree/master/examples) you will find some examples.
 
 ## Contribution
-Any contributions are welcome! Please take a look [CONTRIBUTING.md](./CONTRIBUTING.md) for developers.
+Any contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md).

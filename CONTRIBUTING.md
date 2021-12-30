@@ -42,7 +42,7 @@ $ make docker-build IMAGE_TAG_BASE=<IMAGE_NAME> VERSION=<IMAGE_TAG>
 $ make kind-start
 ```
 
-2. Build image from source code, Load build image to KIND cluster and Start integration test in the following command.
+2. Build image from source code, Load built image to KIND cluster and Start integration test in the following command.
 
 ```shell
 $ make integration-test
