@@ -86,14 +86,14 @@ func checkNoInjection(pod *corev1.Pod) {
 	expectedResource := pod.Spec.Containers[0].Resources
 	Eventually(func() string {
 		getPod := &corev1.Pod{}
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 		return cmp.Diff(getPod.Spec.Containers[0].Resources, expectedResource)
 	}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
 	//Check Pod Affinity
 	Eventually(func() *corev1.Affinity {
 		getPod := &corev1.Pod{}
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 		return getPod.Spec.Affinity
 	}, consts.SuiteTestTimeOut).Should(BeNil())
 
@@ -114,7 +114,7 @@ func checkNoInjection(pod *corev1.Pod) {
 	}
 	Eventually(func() []corev1.Toleration {
 		getPod := &corev1.Pod{}
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 		return getPod.Spec.Tolerations
 	}, consts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
 }
@@ -155,7 +155,7 @@ var _ = Describe("Machine Webhook", func() {
 
 		pod := newFakePod(injectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{})).NotTo(HaveOccurred())
 
 		// Check Container Resource
 		resource := convertToResourceQuantity(&machine.Spec.MachineTypes[0])
@@ -165,7 +165,7 @@ var _ = Describe("Machine Webhook", func() {
 		}
 		Eventually(func() string {
 			getPod := &corev1.Pod{}
-			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 			return cmp.Diff(getPod.Spec.Containers[0].Resources, expectedResource)
 		}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
@@ -183,7 +183,7 @@ var _ = Describe("Machine Webhook", func() {
 		}
 		Eventually(func() string {
 			getPod := &corev1.Pod{}
-			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 			return cmp.Diff(getPod.Spec.Affinity, expectedAffinity)
 		}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
@@ -204,7 +204,7 @@ var _ = Describe("Machine Webhook", func() {
 
 		Eventually(func() []corev1.Toleration {
 			getPod := &corev1.Pod{}
-			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 			return getPod.Spec.Tolerations
 		}, consts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
 
@@ -222,7 +222,7 @@ var _ = Describe("Machine Webhook", func() {
 		pod := newFakePod(notInjectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
 		delete(pod.Labels, consts.MachineGroupKey)
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{})).NotTo(HaveOccurred())
 		checkNoInjection(pod)
 		Expect(k8sClient.Delete(ctx, pod, &client.DeleteOptions{})).NotTo(HaveOccurred())
 
@@ -230,7 +230,7 @@ var _ = Describe("Machine Webhook", func() {
 		pod = newFakePod(notInjectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
 		delete(pod.Labels, consts.MachineTypeKey)
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{})).NotTo(HaveOccurred())
 		checkNoInjection(pod)
 		Expect(k8sClient.Delete(ctx, pod, &client.DeleteOptions{})).NotTo(HaveOccurred())
 
@@ -238,7 +238,7 @@ var _ = Describe("Machine Webhook", func() {
 		pod = newFakePod(notInjectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
 		delete(pod.Labels, consts.PodRoleKey)
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{})).NotTo(HaveOccurred())
 		checkNoInjection(pod)
 		Expect(k8sClient.Delete(ctx, pod, &client.DeleteOptions{})).NotTo(HaveOccurred())
 	})
@@ -252,7 +252,7 @@ var _ = Describe("Machine Webhook", func() {
 	//	Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
 	//
 	//	getPod := &corev1.Pod{}
-	//	Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+	//	Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 	//	getPod.Labels[consts.MachineTypeKey] = "test-machine2"
 	//
 	//	Expect(k8sClient.Update(ctx, getPod, &client.UpdateOptions{})).NotTo(HaveOccurred())
@@ -266,7 +266,7 @@ var _ = Describe("Machine Webhook", func() {
 		pod := newFakePod(injectedPodName, injectedNs, newTestGuestLabels(testMachineTypeName))
 		pod.Labels[consts.ImperatorResourceInjectContainerNameKey] = "test2"
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, &corev1.Pod{})).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), &corev1.Pod{})).NotTo(HaveOccurred())
 
 		// Check Container Resource
 		resource := convertToResourceQuantity(&machine.Spec.MachineTypes[0])
@@ -276,7 +276,7 @@ var _ = Describe("Machine Webhook", func() {
 		}
 		Eventually(func() string {
 			getPod := &corev1.Pod{}
-			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 			return cmp.Diff(getPod.Spec.Containers[1].Resources, expectedResource)
 		}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
@@ -294,7 +294,7 @@ var _ = Describe("Machine Webhook", func() {
 		}
 		Eventually(func() string {
 			getPod := &corev1.Pod{}
-			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 			return cmp.Diff(getPod.Spec.Affinity, expectedAffinity)
 		}, consts.SuiteTestTimeOut).Should(BeEmpty())
 
@@ -315,7 +315,7 @@ var _ = Describe("Machine Webhook", func() {
 
 		Eventually(func() []corev1.Toleration {
 			getPod := &corev1.Pod{}
-			Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 			return getPod.Spec.Tolerations
 		}, consts.SuiteTestTimeOut).Should(ContainElements(expectedToleration))
 	})
@@ -330,7 +330,7 @@ var _ = Describe("Machine Webhook", func() {
 		Expect(k8sClient.Create(ctx, pod, &client.CreateOptions{})).NotTo(HaveOccurred())
 
 		getPod := &corev1.Pod{}
-		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, getPod)).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pod), getPod)).NotTo(HaveOccurred())
 		container0 := getPod.Spec.Containers[0]
 		getPod.Spec.Containers[0] = getPod.Spec.Containers[1]
 		getPod.Spec.Containers[1] = container0

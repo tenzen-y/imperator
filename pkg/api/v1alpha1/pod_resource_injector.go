@@ -99,7 +99,7 @@ func (r *resourceInjector) replacePods(ctx context.Context, pod *corev1.Pod) err
 
 	// fetch old Pod
 	oldPod := &corev1.Pod{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, oldPod); errors.IsNotFound(err) {
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(pod), oldPod); errors.IsNotFound(err) {
 		return nil
 	}
 	return fmt.Errorf("it is forbidden to update the Pod")
