@@ -9,6 +9,8 @@
 ## Overview
 Imperator is Kubernetes Operator to provide virtual resource groups.
 
+![Architecture](imgs/imperator-architecture.svg)
+
 ## Prerequisites
 - [Kubernetes](https://kubernetes.io/) >= v1.20
 - [cert-manager](https://cert-manager.io/) >= v1.0 
