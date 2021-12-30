@@ -261,7 +261,7 @@ var _ = Describe("machine controller envtest", func() {
 			node := newFakeNode(np.Name)
 			Expect(k8sClient.Create(ctx, node, &client.CreateOptions{})).NotTo(HaveOccurred())
 			Eventually(func() error {
-				return k8sClient.Get(ctx, client.ObjectKey{Name: node.Name}, &corev1.Node{})
+				return k8sClient.Get(ctx, client.ObjectKeyFromObject(node), &corev1.Node{})
 			}, consts.SuiteTestTimeOut).Should(BeNil())
 		}
 
@@ -349,14 +349,11 @@ var _ = Describe("machine controller envtest", func() {
 		guestPod := newFakeGuestPod(testMachine2)
 		Expect(k8sClient.Create(ctx, guestPod, &client.CreateOptions{})).NotTo(HaveOccurred())
 		Eventually(func() error {
-			return k8sClient.Get(ctx, client.ObjectKey{Name: guestPod.Name, Namespace: guestPod.Namespace}, &corev1.Pod{})
+			return k8sClient.Get(ctx, client.ObjectKeyFromObject(guestPod), &corev1.Pod{})
 		}, consts.SuiteTestTimeOut).Should(BeNil())
 
 		// Update Status of Guest Pod to Pending
-		updatePodContainerStatus(ctx, client.ObjectKey{
-			Name:      guestPod.Name,
-			Namespace: guestPod.Namespace,
-		}, "pending")
+		updatePodContainerStatus(ctx, client.ObjectKeyFromObject(guestPod), "pending")
 
 		testMachine2MachineAvailable := defaultTestMachineType[testMachine2].Available
 		testMachine2ReservationPodName := strings.Join([]string{
@@ -384,10 +381,7 @@ var _ = Describe("machine controller envtest", func() {
 		})
 
 		// Update Status of Guest Pod to Running
-		updatePodContainerStatus(ctx, client.ObjectKey{
-			Name:      guestPod.Name,
-			Namespace: guestPod.Namespace,
-		}, "running")
+		updatePodContainerStatus(ctx, client.ObjectKeyFromObject(guestPod), "running")
 
 		// Check Machine Status
 		checkMachineAvailableStatus(ctx, testMachine2, gstruct.Fields{
@@ -399,10 +393,7 @@ var _ = Describe("machine controller envtest", func() {
 
 		// Delete Guest Pod
 		pod = &corev1.Pod{}
-		Expect(k8sClient.Get(ctx, client.ObjectKey{
-			Name:      guestPod.Name,
-			Namespace: guestPod.Namespace,
-		}, pod)).NotTo(HaveOccurred())
+		Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(guestPod), pod)).NotTo(HaveOccurred())
 		Expect(k8sClient.Delete(ctx, pod, &client.DeleteOptions{})).NotTo(HaveOccurred())
 
 		// Check Replicas of StatefulSet for reservation
