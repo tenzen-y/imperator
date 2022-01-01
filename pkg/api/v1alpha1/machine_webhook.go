@@ -36,10 +36,12 @@ import (
 var (
 	machinelog = logf.Log.WithName("machine-resource")
 	kubeReader client.Reader
+	ctx        context.Context
 )
 
-func (r *Machine) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *Machine) SetupWebhookWithManager(signalHandler context.Context, mgr ctrl.Manager) error {
 	kubeReader = mgr.GetAPIReader()
+	ctx = signalHandler
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -129,7 +131,7 @@ func (r *Machine) ValidateLabel() error {
 	}
 
 	machines := &MachineList{}
-	if err := kubeReader.List(context.Background(), machines, &client.ListOptions{
+	if err := kubeReader.List(ctx, machines, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			consts.MachineGroupKey: machineGroupName,
 		}),
@@ -152,7 +154,7 @@ func (r *Machine) ValidateLabel() error {
 
 func (r *Machine) ValidateNodeName() error {
 	nodes := &corev1.NodeList{}
-	if err := kubeReader.List(context.Background(), nodes, &client.ListOptions{}); err != nil {
+	if err := kubeReader.List(ctx, nodes, &client.ListOptions{}); err != nil {
 		return err
 	}
 

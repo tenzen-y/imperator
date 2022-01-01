@@ -47,9 +47,8 @@ import (
 //var cfg *rest.Config
 var (
 	k8sClient client.Client
-	testEnv   *envtest.Environment
-	ctx       context.Context
 	cancel    context.CancelFunc
+	testEnv   *envtest.Environment
 )
 
 func TestAPIs(t *testing.T) {
@@ -103,7 +102,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Machine{}).SetupWebhookWithManager(mgr)
+	err = (&Machine{}).SetupWebhookWithManager(ctx, mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	mgr.GetWebhookServer().Register(consts.PodResourceInjectorPath, &webhook.Admission{
