@@ -100,7 +100,7 @@ func main() {
 	ctx := ctrl.SetupSignalHandler()
 
 	setupReconcilers(ctx, mgr)
-	setupWebhooks(mgr)
+	setupWebhooks(ctx, mgr)
 	setupHealthzCheck(mgr)
 
 	setupLog.Info("starting imperator", "version", version.Get().String())
@@ -129,8 +129,8 @@ func setupReconcilers(ctx context.Context, mgr ctrl.Manager) {
 	}
 }
 
-func setupWebhooks(mgr ctrl.Manager) {
-	if err := (&imperatorv1alpha1.Machine{}).SetupWebhookWithManager(mgr); err != nil {
+func setupWebhooks(ctx context.Context, mgr ctrl.Manager) {
+	if err := (&imperatorv1alpha1.Machine{}).SetupWebhookWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Machine")
 		os.Exit(1)
 	}

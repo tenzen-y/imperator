@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -129,8 +128,6 @@ func deleteAllTestGuestPods(namespaces []string) {
 
 var _ = Describe("Machine Webhook", func() {
 	const testMachineTypeName = "test-machine1"
-
-	ctx := context.Background()
 
 	BeforeEach(func() {
 		Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())

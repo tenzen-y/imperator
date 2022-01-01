@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -119,8 +118,6 @@ func newFakeNode(nodeName string) *corev1.Node {
 }
 
 var _ = Describe("Machine Webhook", func() {
-	ctx := context.Background()
-
 	BeforeEach(func() {
 		Expect(k8sClient.DeleteAllOf(ctx, &Machine{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
 		Expect(k8sClient.DeleteAllOf(ctx, &corev1.Node{}, &client.DeleteAllOfOptions{})).NotTo(HaveOccurred())
