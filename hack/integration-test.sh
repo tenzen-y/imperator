@@ -41,6 +41,13 @@ function setup() {
     yq eval -i '.spec.nodePool[0].name|="minikube"' ../examples/machine/general-machine.yaml
   fi;
   kubectl apply -f ../examples/machine/general-machine.yaml
+
+  desired_reservation_pods_num=$(yq eval '.spec.machineTypes[0].available' ../examples/machine/general-machine.yaml)
+  actual_reservation_statefulset_replicas=$(kubectl get -n "${IMPERATOR_CORE_NAMESPACE}" statefulsets general-machine-compute-small -o jsonpath='{.spec.replicas}')
+  if [ ! "${desired_reservation_pods_num}" = "${actual_reservation_statefulset_replicas}" ]; then \
+    exit 1;
+  fi;
+
   kubectl get machines.imperator.tenzen-y.io,machinenodepools.imperator.tenzen-y.io
   kubectl get pods -n "${IMPERATOR_CORE_NAMESPACE}"
   kubectl describe machines general-machine
@@ -66,7 +73,7 @@ function _deploy_guest_deployment() {
       count=5;
     fi;
   done;
-  
+
   kubectl wait pods -n "${GUEST_NAMESPACE}" --for condition=ready --timeout "${TIMEOUT}" -l "${GUEST_POD_LABELS}"
   kubectl get pods -n "${GUEST_NAMESPACE}"
   kubectl describe machines general-machine

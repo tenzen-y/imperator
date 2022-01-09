@@ -14,6 +14,6 @@ spec:
   machineTypes:
     - name: compute-small
       spec:
-        cpu: 600m
-        memory: 1Gi
-      available: 1
+        cpu: 200m
+        memory: 100Mi
+      available: 2
