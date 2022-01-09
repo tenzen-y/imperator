@@ -216,12 +216,18 @@ func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *i
 		}
 		opeResult, err := ctrl.CreateOrUpdate(ctx, r.Client, sts, func() error {
 			origin = sts.DeepCopy()
-			stsReplica := usage.Reserved - (usage.Used + usage.Waiting)
+			stsReplica := usage.Maximum - (usage.Used + usage.Waiting)
+
+			reservationPodLabels := util.GenerateReservationResourceLabel(machineGroup, mt.Name)
+			unscheduledPodNum, err := r.getUnscheduledPodNum(ctx, reservationPodLabels, consts.ImperatorCoreNamespace)
+			if err != nil {
+				return err
+			}
+			stsReplica -= unscheduledPodNum
 			if stsReplica < 0 {
 				stsReplica = 0
-			} else if stsReplica == 0 && usage.Reserved == 0 {
-				stsReplica = usage.Maximum
 			}
+
 			util.GenerateStatefulSet(&mt, machineGroup, stsReplica, sts)
 			return ctrl.SetControllerReference(machine, sts, r.Scheme)
 		})
@@ -398,9 +404,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 				// ContainerCreating
 				if po.Spec.NodeName != "" {
 					machine.Status.AvailableMachines[idx].Usage.Used++
-				} else if _, exist := podConditionTypeMap[corev1.PodScheduled]; exist {
-					scheduledCondition := podConditionTypeMap[corev1.PodScheduled]
-
+				} else if scheduledCondition, exist := podConditionTypeMap[corev1.PodScheduled]; exist {
 					// Pod has not yet been scheduled on any Nodes
 					if scheduledCondition.Reason == corev1.PodReasonUnschedulable &&
 						scheduledCondition.Status == corev1.ConditionFalse {
