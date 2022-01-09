@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/tenzen-y/imperator/pkg/version"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -103,7 +104,7 @@ func main() {
 	setupWebhooks(ctx, mgr)
 	setupHealthzCheck(mgr)
 
-	setupLog.Info("starting imperator", "version", version.Get().String())
+	setupLog.Info("starting imperator", "version", fmt.Sprintf("%v", version.Get()))
 	if err = mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running imperator")
 		os.Exit(1)
