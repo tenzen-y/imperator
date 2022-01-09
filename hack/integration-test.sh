@@ -42,6 +42,18 @@ function setup() {
   fi;
   kubectl apply -f ../examples/machine/general-machine.yaml
 
+  count=0
+  wait_limit=5
+  while [ "${count}" -lt "${wait_limit}" ]; do
+    sts_num=$(kubectl get statefulsets -n ${IMPERATOR_CORE_NAMESPACE} general-machine-compute-small 2>/dev/null | wc -l)
+    if [ "${sts_num}" = "0" ]; then \
+      count=$(( "${count}" + 1 ));
+      sleep 2;
+    else \
+      count=5;
+    fi;
+  done;
+
   desired_reservation_pods_num=$(yq eval '.spec.machineTypes[0].available' ../examples/machine/general-machine.yaml)
   actual_reservation_statefulset_replicas=$(kubectl get -n "${IMPERATOR_CORE_NAMESPACE}" statefulsets general-machine-compute-small -o jsonpath='{.spec.replicas}')
   if [ ! "${desired_reservation_pods_num}" = "${actual_reservation_statefulset_replicas}" ]; then \
