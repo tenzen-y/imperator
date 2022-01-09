@@ -296,6 +296,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 	}
 
 	originAvailableMachineStatus := machine.Status.DeepCopy().AvailableMachines
+	originConditions := machine.Status.DeepCopy().Conditions
 
 	// if availableMachines is empty, create that
 	availableMachinesMap := make(map[string]bool)
@@ -413,15 +414,18 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		machine.Status.AvailableMachines[idx].Usage.Maximum = desiredMachineTypeNum[statusMT.Name]
 	}
 
-	if diff := cmp.Diff(originAvailableMachineStatus, machine.Status.AvailableMachines, consts.CmpSliceOpts...); diff != "" {
+	meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
+		Type:               imperatorv1alpha1.ConditionReady,
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		Reason:             metav1.StatusSuccess,
+		Message:            "update status conditions",
+	})
+
+	conditionDiff := cmp.Diff(originConditions, machine.Status.Conditions, consts.CmpSliceOpts...)
+	diff := cmp.Diff(originAvailableMachineStatus, machine.Status.AvailableMachines, consts.CmpSliceOpts...)
+	if diff != "" || conditionDiff != "" {
 		r.Recorder.Eventf(machine, corev1.EventTypeNormal, "Updated", "updated available machine status")
-		meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
-			Type:               imperatorv1alpha1.ConditionReady,
-			Status:             metav1.ConditionTrue,
-			LastTransitionTime: metav1.Now(),
-			Reason:             metav1.StatusSuccess,
-			Message:            "update status conditions",
-		})
 		if err := r.Status().Update(ctx, machine, &client.UpdateOptions{}); err != nil {
 			return ctrl.Result{Requeue: true}, err
 		}
