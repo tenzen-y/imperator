@@ -25,7 +25,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -103,20 +102,6 @@ func (r *MachineReconciler) reconcile(ctx context.Context, machine *imperatorv1a
 	return r.updateStatus(ctx, machine)
 }
 
-func (r *MachineReconciler) updateReconcileFailedStatus(ctx context.Context, machine *imperatorv1alpha1.Machine, reconcileErr error) (ctrl.Result, error) {
-	meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
-		Type:               imperatorv1alpha1.ConditionReady,
-		Status:             metav1.ConditionFalse,
-		LastTransitionTime: metav1.Now(),
-		Reason:             metav1.StatusFailure,
-		Message:            reconcileErr.Error(),
-	})
-	if err := r.Status().Update(ctx, machine, &client.UpdateOptions{}); err != nil {
-		return ctrl.Result{Requeue: true}, err
-	}
-	return ctrl.Result{}, nil
-}
-
 func (r *MachineReconciler) reconcileMachineNodePool(ctx context.Context, machine *imperatorv1alpha1.Machine) error {
 	logger := log.FromContext(ctx)
 	machineGroup := util.GetMachineGroup(machine.Labels)
@@ -171,10 +156,15 @@ func (r *MachineReconciler) reconcileMachineNodePool(ctx context.Context, machin
 		logger.Info(fmt.Sprintf("reconciled MachineNodePool; %v", string(opeResult)))
 	}
 	if opeResult == controllerutil.OperationResultCreated {
-		return nil
+		logger.Info(fmt.Sprintf("created MachineNodePool, %s", pool.Name))
 	}
 	if opeResult == controllerutil.OperationResultUpdated {
+		logger.Info(fmt.Sprintf("updated MachineNodePool, %s", pool.Name))
 		logger.Info(cmp.Diff(origin.Spec, pool.Spec, consts.CmpSliceOpts...))
+	}
+
+	if err = r.updateReconcileConditions(ctx, opeResult, machine); err != nil {
+		return err
 	}
 
 	return nil
@@ -239,12 +229,17 @@ func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *i
 			logger.Info(fmt.Sprintf("reconciled StatefulSet for machineType, %s", mt.Name))
 		}
 		if opeResult == controllerutil.OperationResultCreated {
-			continue
+			logger.Info(fmt.Sprintf("created StatefulSet for machineType, %s", mt.Name))
 		}
 		if opeResult == controllerutil.OperationResultUpdated {
 			logger.Info(fmt.Sprintf("updated StatefulSet for machineType, %s", mt.Name))
 			logger.Info(cmp.Diff(origin.Spec, sts.Spec, consts.CmpStatefulSetOpts...))
 		}
+
+		if err = r.updateReconcileConditions(ctx, opeResult, machine); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -279,15 +274,21 @@ func (r *MachineReconciler) reconcileService(ctx context.Context, machine *imper
 		if err != nil {
 			return fmt.Errorf("failed to reconcile Service for machineType, %s; %v", mt.Name, err)
 		}
+
 		if opeResult == controllerutil.OperationResultNone {
 			logger.Info(fmt.Sprintf("reconciled Service for machineType, %s", mt.Name))
 		}
 		if opeResult == controllerutil.OperationResultCreated {
-			continue
+			logger.Info(fmt.Sprintf("created Service for machineType, %s", mt.Name))
 		}
 		if opeResult == controllerutil.OperationResultUpdated {
-			logger.Info(fmt.Sprintf("machineType: %s; updated Service", mt.Name))
+			logger.Info(fmt.Sprintf("updated Service for machineType, %s", mt.Name))
 		}
+
+		if err = r.updateReconcileConditions(ctx, opeResult, machine); err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
@@ -302,7 +303,6 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 	}
 
 	originAvailableMachineStatus := machine.Status.DeepCopy().AvailableMachines
-	originConditions := machine.Status.DeepCopy().Conditions
 
 	// if availableMachines is empty, create that
 	availableMachinesMap := make(map[string]bool)
@@ -418,20 +418,10 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		machine.Status.AvailableMachines[idx].Usage.Maximum = desiredMachineTypeNum[statusMT.Name]
 	}
 
-	meta.SetStatusCondition(&machine.Status.Conditions, metav1.Condition{
-		Type:               imperatorv1alpha1.ConditionReady,
-		Status:             metav1.ConditionTrue,
-		LastTransitionTime: metav1.Now(),
-		Reason:             metav1.StatusSuccess,
-		Message:            "update status conditions",
-	})
-
-	conditionDiff := cmp.Diff(originConditions, machine.Status.Conditions, consts.CmpSliceOpts...)
-	diff := cmp.Diff(originAvailableMachineStatus, machine.Status.AvailableMachines, consts.CmpSliceOpts...)
-	if diff != "" || conditionDiff != "" {
+	if diff := cmp.Diff(originAvailableMachineStatus, machine.Status.AvailableMachines, consts.CmpSliceOpts...); diff != "" {
 		r.Recorder.Eventf(machine, corev1.EventTypeNormal, "Updated", "updated available machine status")
-		if err := r.Status().Update(ctx, machine, &client.UpdateOptions{}); err != nil {
-			return ctrl.Result{Requeue: true}, err
+		if err := r.updateReconcileSuccessStatus(ctx, machine); err != nil {
+			return ctrl.Result{}, err
 		}
 		logger.Info(diff)
 	}
