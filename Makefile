@@ -60,6 +60,7 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 .PHONY: bundle-manifests
 bundle-manifests:
 	kustomize build config/default  > deploy/imperator.yaml
+	kustomize build config/crd > deploy/crds.yaml
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
