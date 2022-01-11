@@ -43,14 +43,15 @@ function setup() {
   kubectl apply -f ../examples/machine/general-machine.yaml
 
   count=0
-  wait_limit=5
-  while [ "${count}" -lt "${wait_limit}" ]; do
-    sts_num=$(kubectl get statefulsets -n ${IMPERATOR_CORE_NAMESPACE} general-machine-compute-small 2>/dev/null | wc -l)
+  wait_limit=10
+  while [ ! "${count}" = "${wait_limit}" ]; do \
+    sts_num=$(kubectl get statefulsets -n "${IMPERATOR_CORE_NAMESPACE}" general-machine-compute-small 2>/dev/null | wc -l);
     if [ "${sts_num}" = "0" ]; then \
+      kubectl get statefulsets -n "${IMPERATOR_CORE_NAMESPACE}";
       count=$(( "${count}" + 1 ));
-      sleep 2;
+      sleep 5;
     else \
-      count=5;
+      break;
     fi;
   done;
 

@@ -24,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/tenzen-y/imperator/pkg/consts"
@@ -51,7 +50,7 @@ func newFakeMachine() *Machine {
 				{
 					Name:  "test-node1",
 					Mode:  NodeModeReady,
-					Taint: pointer.Bool(false),
+					Taint: false,
 					MachineType: []NodePoolMachineType{{
 						Name: "test-machine1",
 					}},
@@ -59,7 +58,7 @@ func newFakeMachine() *Machine {
 				{
 					Name:  "test-node2",
 					Mode:  NodeModeMaintenance,
-					Taint: pointer.Bool(false),
+					Taint: false,
 					MachineType: []NodePoolMachineType{{
 						Name: "test-machine2",
 					}},
@@ -67,7 +66,7 @@ func newFakeMachine() *Machine {
 				{
 					Name:  "test-node3",
 					Mode:  NodeModeReady,
-					Taint: pointer.Bool(true),
+					Taint: true,
 					MachineType: []NodePoolMachineType{{
 						Name: "test-machine1",
 					}},
@@ -171,15 +170,6 @@ var _ = Describe("Machine Webhook", func() {
 					return fakeMachine
 				}(),
 				err: true,
-			},
-			{
-				description: "Taint field is nil",
-				fakeMachine: func() *Machine {
-					fakeMachine := newFakeMachine()
-					fakeMachine.Spec.NodePool[0].Taint = nil
-					return fakeMachine
-				}(),
-				err: false,
 			},
 			{
 				description: "Type of GPU must be set value",
