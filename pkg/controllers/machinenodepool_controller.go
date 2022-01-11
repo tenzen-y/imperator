@@ -229,7 +229,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 		}
 		originNode := node.DeepCopy()
 		r.removeNodeLabel(pool, node)
-		if *p.Taint {
+		if p.Taint {
 			r.removeNodeTaint(pool, node)
 		}
 
@@ -270,7 +270,7 @@ func (r *MachineNodePoolReconciler) reconcileNode(ctx context.Context, pool *imp
 			node.Labels[mtKey] = pool.Spec.MachineGroupName
 		}
 
-		if *p.Taint {
+		if p.Taint {
 			if node.Spec.Taints == nil {
 				node.Spec.Taints = make([]corev1.Taint, 0)
 			}
@@ -350,7 +350,7 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 		}
 
 		nodeLabelCondition := node.Labels[consts.MachineStatusKey]
-		if *p.Taint {
+		if p.Taint {
 			for _, t := range node.Spec.Taints {
 				if t.Key != consts.MachineStatusKey {
 					continue

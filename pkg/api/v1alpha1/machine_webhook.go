@@ -23,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -56,13 +55,6 @@ var _ webhook.Defaulter = &Machine{}
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Machine) Default() {
 	machinelog.Info("default", "name", r.Name)
-
-	for _, pool := range r.Spec.NodePool {
-		// Taint is false by default
-		if pool.Taint == nil {
-			pool.Taint = pointer.Bool(false)
-		}
-	}
 
 	// initialize machineAvailable
 	for _, mt := range r.Spec.MachineTypes {

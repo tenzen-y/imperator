@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -211,7 +210,7 @@ var _ = Describe("machine controller envtest", func() {
 		testNode1: {
 			Name:  testNode1,
 			Mode:  imperatorv1alpha1.NodeModeReady,
-			Taint: pointer.Bool(false),
+			Taint: false,
 			MachineType: []imperatorv1alpha1.NodePoolMachineType{{
 				Name: testMachine1,
 			}},
@@ -219,7 +218,7 @@ var _ = Describe("machine controller envtest", func() {
 		testNode2: {
 			Name:  testNode2,
 			Mode:  imperatorv1alpha1.NodeModeReady,
-			Taint: pointer.Bool(true),
+			Taint: true,
 			MachineType: []imperatorv1alpha1.NodePoolMachineType{{
 				Name: testMachine2,
 			}},

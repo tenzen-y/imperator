@@ -47,7 +47,7 @@ type NodePool struct {
 
 	// +optional
 	// default=false
-	Taint *bool `json:"taint,omitempty"`
+	Taint bool `json:"taint,omitempty"`
 
 	// +kubebuilder:validation:Required
 	MachineType []NodePoolMachineType `json:"machineType"`
