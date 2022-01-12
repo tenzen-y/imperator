@@ -206,14 +206,14 @@ func (r *MachineReconciler) reconcileStatefulSet(ctx context.Context, machine *i
 		}
 		opeResult, err := ctrl.CreateOrUpdate(ctx, r.Client, sts, func() error {
 			origin = sts.DeepCopy()
-			stsReplica := usage.Maximum - (usage.Used + usage.Waiting)
 
 			reservationPodLabels := util.GenerateReservationResourceLabel(machineGroup, mt.Name)
 			unscheduledPodNum, err := r.getUnscheduledPodNum(ctx, reservationPodLabels, consts.ImperatorCoreNamespace)
 			if err != nil {
 				return err
 			}
-			stsReplica -= unscheduledPodNum
+
+			stsReplica := usage.Maximum - (usage.Used + usage.Waiting + unscheduledPodNum)
 			if stsReplica < 0 {
 				stsReplica = 0
 			}
