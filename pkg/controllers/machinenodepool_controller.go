@@ -68,10 +68,9 @@ func (r *MachineNodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	err := r.Get(ctx, req.NamespacedName, pool)
 	if errors.IsNotFound(err) {
 		return ctrl.Result{}, nil
-	}
-	if err != nil {
+	} else if err != nil {
 		logger.Error(err, "unable to get MachineNodePool", "name", req.NamespacedName)
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	return r.reconcile(ctx, pool)
@@ -84,7 +83,7 @@ func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, pool *imperat
 		if !controllerutil.ContainsFinalizer(pool, consts.MachineNodePoolFinalizer) {
 			controllerutil.AddFinalizer(pool, consts.MachineNodePoolFinalizer)
 			if err := r.Update(ctx, pool); err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{Requeue: true}, err
 			}
 			r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "add finalizer")
 			return ctrl.Result{}, nil
@@ -92,11 +91,11 @@ func (r *MachineNodePoolReconciler) reconcile(ctx context.Context, pool *imperat
 	} else {
 		if controllerutil.ContainsFinalizer(pool, consts.MachineNodePoolFinalizer) {
 			if err := r.cleanupNode(ctx, pool); err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{Requeue: true}, err
 			}
 			controllerutil.RemoveFinalizer(pool, consts.MachineNodePoolFinalizer)
 			if err := r.Update(ctx, pool); err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{Requeue: true}, err
 			}
 			r.Recorder.Eventf(pool, corev1.EventTypeNormal, "Updated", "remove finalizer")
 		}
@@ -346,7 +345,7 @@ func (r *MachineNodePoolReconciler) updateStatus(ctx context.Context, pool *impe
 	for _, p := range pool.Spec.NodePool {
 		node := &corev1.Node{}
 		if err := r.Get(ctx, client.ObjectKey{Name: p.Name}, node); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		}
 
 		nodeLabelCondition := node.Labels[consts.MachineStatusKey]

@@ -77,6 +77,9 @@ func (r *MachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	err := r.Get(ctx, req.NamespacedName, machine)
 	if errors.IsNotFound(err) {
 		return ctrl.Result{}, nil
+	} else if err != nil {
+		logger.Error(err, "unable to get Machine", "name", req.NamespacedName)
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	return r.reconcile(ctx, machine)
@@ -339,10 +342,10 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		}
 
 		if err := mergo.Map(&reservationRoleLabels, roleCommonLabels, mergo.WithOverride); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		}
 		if err := mergo.Map(&guestRoleLabels, roleCommonLabels, mergo.WithOverride); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		}
 
 		// looking for Pods to reserve resource
@@ -350,7 +353,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		if err := r.List(ctx, reservationPods, &client.ListOptions{
 			LabelSelector: labels.SelectorFromSet(reservationRoleLabels),
 		}); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		}
 
 		machine.Status.AvailableMachines[idx].Usage.Reserved = 0
@@ -374,7 +377,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 		if err := r.List(ctx, guestPods, &client.ListOptions{
 			LabelSelector: labels.SelectorFromSet(guestRoleLabels),
 		}); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		}
 
 		machine.Status.AvailableMachines[idx].Usage.Used = 0
@@ -383,7 +386,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 
 			ns := &corev1.Namespace{}
 			if err := r.Get(ctx, client.ObjectKey{Name: po.Namespace}, ns); err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{Requeue: true}, err
 			}
 			if injectionLabel := ns.Labels[consts.ImperatorResourceInjectionKey]; injectionLabel != consts.ImperatorResourceInjectionEnabled {
 				continue
@@ -421,7 +424,7 @@ func (r *MachineReconciler) updateStatus(ctx context.Context, machine *imperator
 	if diff := cmp.Diff(originAvailableMachineStatus, machine.Status.AvailableMachines, consts.CmpSliceOpts...); diff != "" {
 		r.Recorder.Eventf(machine, corev1.EventTypeNormal, "Updated", "updated available machine status")
 		if err := r.updateReconcileSuccessStatus(ctx, machine); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		}
 		logger.Info(diff)
 	}
