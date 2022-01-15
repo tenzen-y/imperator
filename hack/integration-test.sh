@@ -33,7 +33,6 @@ function setup() {
   kustomize build ../config/default | kubectl apply -f -
   kubectl wait pods -n "${IMPERATOR_CORE_NAMESPACE}" --for condition=ready --timeout="${TIMEOUT}" -l app.kubernetes.io/name=imperator
   kubectl get pods -n "${IMPERATOR_CORE_NAMESPACE}"
-  sleep 5
 
   # Deploy Machine
   echo "Deploy Machine"
@@ -43,17 +42,14 @@ function setup() {
   kubectl apply -f ../examples/machine/general-machine.yaml
 
   count=0
+  sts_num=0
   wait_limit=10
-  while [ ! "${count}" = "${wait_limit}" ]; do \
-    sts_num=$(kubectl get statefulsets -n "${IMPERATOR_CORE_NAMESPACE}" general-machine-compute-small 2>/dev/null | wc -l);
-    if [ "${sts_num}" = "0" ]; then \
-      kubectl get statefulsets -n "${IMPERATOR_CORE_NAMESPACE}";
-      count=$(( "${count}" + 1 ));
-      sleep 5;
-    else \
-      break;
-    fi;
-  done;
+  until [ "${count}" = "${wait_limit}" ] || [ "${sts_num}" -gt 0 ]; do \
+    sleep 5
+    sts_num=$(kubectl get statefulsets -n "${IMPERATOR_CORE_NAMESPACE}" general-machine-compute-small 2>/dev/null | wc -l)
+    kubectl get statefulsets -n "${IMPERATOR_CORE_NAMESPACE}"
+    count=$(( "${count}" + 1 ))
+  done
 
   desired_reservation_pods_num=$(yq eval '.spec.machineTypes[0].available' ../examples/machine/general-machine.yaml)
   actual_reservation_statefulset_replicas=$(kubectl get -n "${IMPERATOR_CORE_NAMESPACE}" statefulsets general-machine-compute-small -o jsonpath='{.spec.replicas}')
