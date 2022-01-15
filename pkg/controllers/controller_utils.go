@@ -69,7 +69,7 @@ func (r *MachineReconciler) updateReconcileFailedStatus(ctx context.Context, mac
 	if err := r.Status().Update(ctx, machine, &client.UpdateOptions{}); err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{Requeue: true}, nil
 }
 
 func (r *MachineReconciler) updateReconcileSuccessStatus(ctx context.Context, machine *imperatorv1alpha1.Machine) error {
